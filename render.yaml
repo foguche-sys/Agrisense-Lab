@@ -1,0 +1,35 @@
+# One-button deploy on Render: Dashboard → New → Blueprint → pick this repo.
+# Render asks for the values marked sync: false (your owner email and password), then builds
+# the database and the website together. Choose plans on that screen; free plans sleep or expire.
+databases:
+  - name: agrisense-db
+    databaseName: agrisense
+    user: agrisense
+
+services:
+  - type: web
+    name: agrisense-lab
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: flask --app wsgi init-db && gunicorn -w 2 -k gthread --threads 4 -b 0.0.0.0:$PORT --access-logfile - wsgi:app
+    healthCheckPath: /
+    autoDeploy: true
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.12.7
+      - key: DATABASE_URL
+        fromDatabase:
+          name: agrisense-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SESSION_COOKIE_SECURE
+        value: "1"
+      - key: FLASK_ENV
+        value: production
+      - key: OWNER_EMAIL
+        sync: false
+      - key: OWNER_PASSWORD
+        sync: false
+      - key: SEED_DEMO
+        value: "0"

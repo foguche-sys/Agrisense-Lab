@@ -34,6 +34,9 @@ def create_app(test_config=None):
 
     @app.before_request
     def _before():
+        if not app.config.get("TESTING") and os.environ.get("AUTO_HOUSEKEEPING", "1") == "1":
+            from .services.housekeeping import maybe_run
+            maybe_run(database)
         auth.load_user()
         auth.check_csrf()
 
@@ -93,11 +96,29 @@ def create_app(test_config=None):
 
     @app.cli.command("init-db")
     def init_db():
-        """Create tables and load lessons and plans."""
+        """Create tables and load lessons and plans. Safe to run on every start.
+
+        On a first deploy it also creates the AgriSense owner account from OWNER_EMAIL / OWNER_PASSWORD,
+        and loads the demo school when SEED_DEMO=1."""
         database.init_schema()
         with app.app_context():
             from .services.catalog import seed_catalog
-            seed_catalog(get_db())
+            db = get_db()
+            seed_catalog(db)
+            email = (os.environ.get("OWNER_EMAIL") or "").strip().lower()
+            pw = os.environ.get("OWNER_PASSWORD") or ""
+            if email and pw and not db.val("SELECT id FROM users WHERE email = ?", email):
+                if len(pw) < 10:
+                    click.echo("OWNER_PASSWORD must be at least 10 characters; owner not created.")
+                else:
+                    from .seed import ensure_platform_org
+                    org = ensure_platform_org(db)
+                    uid = auth.create_user(db, os.environ.get("OWNER_NAME") or "AgriSense owner", email, pw)
+                    auth.add_membership(db, uid, "owner", org_id=org)
+                    click.echo(f"Owner account created for {email}.")
+            if os.environ.get("SEED_DEMO") == "1":
+                from .seed import run
+                click.echo(run(db).splitlines()[0])
         click.echo("Database ready.")
 
     @app.cli.command("seed-demo")
@@ -110,27 +131,10 @@ def create_app(test_config=None):
     @app.cli.command("housekeeping")
     def housekeeping():
         """Run every few minutes (cron): mark silent devices offline, add offline alerts, apply data retention."""
-        from .db import ago, new_id, now
-        from .services.safety import auto_off_due, school_settings
+        from .services.housekeeping import run as hk
         with app.app_context():
-            db = get_db()
-            auto_off_due(db)
-            stale = db.q("SELECT * FROM devices WHERE status = 'online' AND last_seen < ?", ago(minutes=15))
-            for d in stale:
-                db.update("devices", d["id"], status="offline")
-                db.insert("alerts", id=new_id("al"), school_id=d["school_id"], device_id=d["id"], kind="offline",
-                          message=f"{d['serial']} hasn't reported for 15 minutes. Check power and Wi-Fi.", created_at=now())
-            pruned = 0
-            for s in db.q("SELECT id FROM schools"):
-                days = school_settings(db, s["id"]).get("retention_days", 365)
-                cutoff = ago(days=days)
-                ids = [r["id"] for r in db.q("SELECT f.id FROM feeds f LEFT JOIN kits k ON k.id = f.kit_id LEFT JOIN teams t ON t.id = f.team_id "
-                                             "LEFT JOIN classes c ON c.id = t.class_id WHERE COALESCE(f.school_id, k.school_id, c.school_id) = ?", s["id"])]
-                for fid in ids:
-                    pruned += db.val("SELECT COUNT(*) AS n FROM datapoints WHERE feed_id = ? AND created_at < ?", fid, cutoff) or 0
-                    db.run("DELETE FROM datapoints WHERE feed_id = ? AND created_at < ?", fid, cutoff)
-            db.run("DELETE FROM commands WHERE expires_at < ?", ago(days=2))
-        click.echo(f"{len(stale)} devices marked offline, {pruned} old readings removed.")
+            stale, pruned = hk(get_db())
+        click.echo(f"{stale} devices marked offline, {pruned} old readings removed.")
 
     @app.cli.command("create-owner")
     @click.argument("email")

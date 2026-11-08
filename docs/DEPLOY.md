@@ -1,6 +1,25 @@
 # Deploying
 
-## Docker (recommended)
+## Easiest: one-button deploy on Render (no command line)
+
+1. Go to render.com and sign up with your GitHub account. When asked, let Render see the **Agrisense-Lab** repository.
+2. In the Render dashboard click **New → Blueprint**, then pick **Agrisense-Lab**. Render reads `render.yaml` and shows two things to create: the database `agrisense-db` and the website `agrisense-lab`.
+3. Fill in the two boxes it asks for:
+   - **OWNER_EMAIL**: the email you'll sign in with as the AgriSense Hub owner.
+   - **OWNER_PASSWORD**: at least 10 characters. Keep it in a password manager.
+4. Choose plans for the database and the website. Free plans are fine for trying it out, but they sleep when idle or expire, so use paid plans before a school relies on it. Then click **Apply**.
+5. Wait for the build to finish (a few minutes). Click the address Render shows, for example `https://agrisense-lab.onrender.com`. Sign in with your owner email and password.
+6. **Your own address:** in the website's **Settings → Custom Domains**, add `lab.agrisensehub.com`. Render shows one DNS record (a CNAME). Add it where your agrisensehub.com DNS is managed, the same place you set up `iot.agrisensehub.com`. HTTPS turns on by itself once the record is live.
+
+Every push to `main` on GitHub now updates the site automatically.
+
+- The database tables are created on every start; this is safe to repeat.
+- Housekeeping (offline devices, data retention) runs inside the app every 5 minutes, so you don't need a cron job.
+- To try the demo school, set `SEED_DEMO` to `1` under the website's **Environment** tab, then redeploy. Set it back to `0` afterwards. The demo accounts share a known password, so delete the demo school before real schools join.
+
+After deploying, schools sign up at `/signup`. As the owner, you make device serials and keys under **Inventory**.
+
+## Docker (any server)
 
 ```bash
 cp .env.example .env              # set SECRET_KEY and POSTGRES_PASSWORD

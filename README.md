@@ -60,4 +60,4 @@ docs/             API.md, DEPLOY.md, screenshots/
 tests/            pytest suite        tools/pg_replay.sh
 ```
 
-See `docs/DEPLOY.md` to put it online at iot.agrisensehub.com, and `docs/API.md` for the device and team-key API.
+**Put it online:** the one-button Render steps are at the top of `docs/DEPLOY.md`. See `docs/DEPLOY.md` to put it online at iot.agrisensehub.com, and `docs/API.md` for the device and team-key API.
