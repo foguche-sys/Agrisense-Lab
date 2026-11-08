@@ -1,7 +1,7 @@
-{% extends "base.html" %}{% block title %}Actions{% endblock %}
+{% extends "base.html" %}{% block title %}Rules{% endblock %}
 {% from "partials/macros.html" import csrf, studio_tabs with context %}
 {% block body %}
-{{ studio_tabs(team, 'actions', teams, 'Actions') }}
+{{ studio_tabs(team, 'actions', teams, 'Rules') }}
 <div class="grid side">
   <div class="card"><h2>Our rules</h2>
     {% for r in rules %}<div class="row between" style="padding:12px 0;border-bottom:1px solid var(--line-2)">
@@ -9,9 +9,14 @@
         <br><small class="muted">{{ r.text }}</small>{% if r.last_fired_at %}<br><small class="faint">Last ran {{ r.last_fired_at|ago }}</small>{% endif %}</div>
       {% if can_edit %}<div class="row"><form method="post">{{ csrf() }}<input type="hidden" name="do" value="toggle"><input type="hidden" name="action_id" value="{{ r.id }}"><button class="btn small">{{ 'Turn off' if r.enabled else 'Turn on' }}</button></form>
         <form method="post" data-confirm="Delete this rule?">{{ csrf() }}<input type="hidden" name="do" value="delete"><input type="hidden" name="action_id" value="{{ r.id }}"><button class="btn small">Delete</button></form></div>{% endif %}</div>
-    {% else %}<p class="empty">No rules yet. A rule watches a feed and does something when it crosses a value.</p>{% endfor %}
+    {% else %}<p class="empty">No rules yet. A rule watches a feed and acts when it crosses a value.</p>{% endfor %}
   </div>
   {% if can_edit %}
+  <div class="stack">
+  <div class="card"><h2>Quick farm rules</h2><p class="muted">One click adds a ready-made rule. You can switch it off or delete it any time.</p>
+    {% for key, t in templates.items() %}<form method="post" class="row between" style="padding:8px 0;border-bottom:1px solid var(--line-2)">{{ csrf() }}
+      <input type="hidden" name="do" value="template"><input type="hidden" name="tpl" value="{{ key }}">
+      <div style="min-width:0;flex:1"><b>{{ t[0] }}</b><br><small class="muted">{{ t[8] }}</small></div><button class="btn small">Add</button></form>{% endfor %}</div>
   <div class="card"><h2>New rule</h2>
     <form method="post">{{ csrf() }}<input type="hidden" name="do" value="create">
       <div class="field"><label for="an">Name</label><input id="an" name="name" placeholder="Water when dry" required></div>
@@ -25,6 +30,7 @@
         <div><label for="a1">Only from</label><input id="a1" type="time" name="start_hhmm" value="08:00"></div><div><label for="a2">to</label><input id="a2" type="time" name="end_hhmm" value="15:30"></div></div>
       <p class="hint">Rules that turn the pump ON need your teacher's approval once.</p>
       <button class="btn primary">Save rule</button></form></div>
+  </div>
   {% endif %}
 </div>
 {% endblock %}

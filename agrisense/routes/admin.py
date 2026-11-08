@@ -124,6 +124,18 @@ def add_staff():
     if "@" not in email or not f.get("name"):
         err("Enter a name and an email.")
         return redirect(url_for("admin.people", school=school["id"]))
+    class_roles = ("teacher", "co_teacher", "substitute", "observer")
+    child = None
+    # check everything before creating the account, so a mistake never leaves an empty account behind
+    if role in class_roles and (not f.get("class_id") or d.val("SELECT school_id FROM classes WHERE id = ?", f["class_id"]) != school["id"]):
+        err("Choose the class for this role.")
+        return redirect(url_for("admin.people", school=school["id"]))
+    if role == "parent":
+        child = d.one("SELECT m.user_id FROM memberships m JOIN classes c ON c.id = m.class_id WHERE m.user_id = ? AND m.role = 'student' AND c.school_id = ?",
+                      f.get("child_id"), school["id"])
+        if not child:
+            err("Choose which student this parent or guardian belongs to.")
+            return redirect(url_for("admin.people", school=school["id"]))
     u = d.one("SELECT * FROM users WHERE email = ?", email)
     temp = None
     if not u:
@@ -132,14 +144,12 @@ def add_staff():
     else:
         uid = u["id"]
     expires = ahead(days=int(f.get("days") or 7)) if role in ("substitute", "observer") else None
-    class_roles = ("teacher", "co_teacher", "substitute", "observer")
     if role in class_roles:
-        if not f.get("class_id") or d.val("SELECT school_id FROM classes WHERE id = ?", f["class_id"]) != school["id"]:
-            err("Choose the class for this role.")
-            return redirect(url_for("admin.people", school=school["id"]))
         auth.add_membership(d, uid, role, class_id=f["class_id"], expires_at=expires)
     elif role in ("client_admin", "billing", "privacy"):
         auth.add_membership(d, uid, role, org_id=school["org_id"])
+    elif role == "parent":
+        auth.add_membership(d, uid, role, school_id=school["id"], child_user_id=child["user_id"])
     else:
         auth.add_membership(d, uid, role, school_id=school["id"])
     log(d, "role.grant", f"{email} -> {role}", school_id=school["id"])
@@ -219,8 +229,9 @@ def devices():
                   LEFT JOIN teams tm ON tm.id = dv.team_id LEFT JOIN classes c ON c.id = tm.class_id
                   WHERE dv.school_id = ? ORDER BY dv.kind, dv.serial""", school["id"])
     teams = d.q("SELECT tm.id, tm.name, c.name AS class_name FROM teams tm JOIN classes c ON c.id = tm.class_id WHERE c.school_id = ? ORDER BY c.name, tm.name", school["id"])
+    from ..services.agronomy import CROPS
     return render_template("admin/devices.html", school=school, kits=kits, devices=devs, teams=teams,
-                           components=F.TRAINER_COMPONENTS)
+                           components=F.TRAINER_COMPONENTS, crops=CROPS)
 
 
 @bp.route("/kits", methods=["POST"])
@@ -308,8 +319,10 @@ def update_tray(tray_id):
         abort(404)
     soil = request.form.get("soil")
     from ..services.simulate import SOILS
+    from ..services.agronomy import CROPS
     if soil in SOILS:
-        d.update("trays", tray_id, soil=soil, label=(request.form.get("label") or soil.title())[:40])
+        crop = request.form.get("crop") if request.form.get("crop") in CROPS else tray.get("crop")
+        d.update("trays", tray_id, soil=soil, crop=crop, label=(request.form.get("label") or soil.title())[:40])
         ok(f"Tray {tray['letter']} saved.")
     return redirect(url_for("admin.devices", school=school["id"]))
 
@@ -332,9 +345,7 @@ def settings():
             return redirect(url_for("admin.settings", school=school["id"]))
         s["class_hours_only"] = f.get("class_hours_only") == "1"
         s["class_hours"] = [f.get("hours_from") or "07:00", f.get("hours_to") or "16:30"]
-        s["student_signin"] = f.get("student_signin") or "pictures"
         s["parents_enabled"] = f.get("parents_enabled") == "1"
-        s["units"] = f.get("units") or "metric"
         d.update("schools", school["id"], settings=jdump(s), timezone=f.get("timezone") or school["timezone"])
         log(d, "school.settings", jdump(s), school_id=school["id"])
         ok("Settings saved.")

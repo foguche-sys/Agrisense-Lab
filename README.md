@@ -1,6 +1,6 @@
 # AgriSense Lab platform
 
-The web app for **AgriSense Lab**, the precision-agriculture teaching kit from AgriSense Hub. Schools register their kits. Teachers run live soil-bench labs and approve pump runs. Students build their own dashboards in an IoT Studio (in the style of Adafruit IO) to switch the Trainer Board's pump, fan and vent. Everyone downloads the data.
+The web app for **AgriSense Lab**, the precision-agriculture teaching kit from AgriSense Hub. Schools register their kits. Teachers run live soil-bench labs and approve pump runs. Students build their own IoT dashboards in the Field Studio (feeds, widgets, rules and API keys) to switch the Trainer Board's pump, fan and vent, and an irrigation advisor tells each team when and how long to water for its soil and crop. Everyone downloads the data.
 
 It runs as a new app beside iot.agrisensehub.com and uses the **same gateways**: the gateway posts readings to `/api/v1/ingest`.
 
@@ -11,9 +11,9 @@ It runs as a new app beside iot.agrisensehub.com and uses the **same gateways**:
 | Public site | everyone | Landing page, lessons, plans, quote request, school sign-up (pilot), privacy page |
 | Sign-in | adults / students | Email + password; students use class code → tap name → two pictures |
 | School admin | client admin, school admin, IT, billing, privacy | People and roles, classes, students (printable sign-in cards), kits and trays, **register hardware** (serial + claim code), device health, settings (pump limits, class hours, retention), privacy agreement, time-limited support access, billing (quotes, invoices, PO), activity log |
-| Teacher | teacher, co-teacher, substitute | Live bench (5 trays), approve or decline pump requests, **STOP ALL**, simulation (dry spell, heat wave, speed), unlock IoT Studio controls, lessons 1.1–1.9, gradebook, teams and trays |
-| Student | student | Team tray (charts, observations, ask for water), lab journal (claim, evidence, reasoning + data table) |
-| IoT Studio | student team (teacher can view or lock) | **Dashboards** (toggle, slider, gauge, chart, big number, indicator, stream), **Feeds**, **Devices** (Trainer components), **Actions** (when X then Y), **Code & key** (team API key and examples) |
+| Teacher | teacher, co-teacher, substitute | Live bench (5 trays), approve or decline pump requests, **STOP ALL**, simulation (dry spell, heat wave, speed), unlock Field Studio controls, lessons 1.1–1.9, gradebook, teams and trays |
+| Student | student | Team tray (charts, irrigation advisor, predict → water → check decision log, observations), lab journal (claim, evidence, reasoning + data table) |
+| Field Studio | student team (teacher can view or lock) | **Dashboards** (toggle, slider, gauge, chart, big number, indicator, stream, soil-water bar), **Feeds**, **Devices** (Trainer components), **Rules** (when X then Y, plus one-click farm rules), **API & keys** (team API key and examples) |
 | Data | anyone with data access | Pick feeds and a range, chart, download **CSV / Excel / JSON** (de-identified unless the user has named-export rights) |
 | Parent | parent | Their own child's lab status and scores |
 | AgriSense staff | owner, ops, support, finance, content, sales | Clients, fleet health, **device inventory** (make serials, claim codes, keys), quotes and invoices, leads, staff roles; can see inside a school only while that school has granted support access |

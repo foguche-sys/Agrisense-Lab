@@ -61,7 +61,7 @@ def running_request(db, class_or_kit_classes):
     return None
 
 
-def request_bench(db, user, memberships, cls, tray, seconds, reason, team_id=None, moisture=None):
+def request_bench(db, user, memberships, cls, tray, seconds, reason, team_id=None, moisture=None, prediction=None):
     if not can(db, memberships, "pump.request", class_id=cls["id"], team_id=team_id):
         raise SafetyError("You can't request pump runs in this class.")
     if not cls["pump_requests_allowed"]:
@@ -75,8 +75,12 @@ def request_bench(db, user, memberships, cls, tray, seconds, reason, team_id=Non
         raise SafetyError(f"Pick between 1 and {limit} seconds.")
     if team_id and db.one("SELECT id FROM pump_requests WHERE team_id = ? AND status = 'pending'", team_id):
         raise SafetyError("Your team already has a request waiting.")
+    try:
+        prediction = None if prediction in (None, "") else round(float(prediction), 1)
+    except (TypeError, ValueError):
+        raise SafetyError("Your prediction should be a number, like 24.5.")
     rid = new_id("pr")
-    db.insert("pump_requests", id=rid, class_id=cls["id"], team_id=team_id, tray_id=tray["id"], requested_by=user["id"],
+    db.insert("pump_requests", id=rid, prediction=prediction, class_id=cls["id"], team_id=team_id, tray_id=tray["id"], requested_by=user["id"],
               seconds=seconds, reason=(reason or "")[:200], moisture_before=moisture, status="pending",
               simulated=1 if cls["sim_enabled"] else 0, created_at=now())
     return rid

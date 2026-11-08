@@ -7,6 +7,16 @@ STALE_MINUTES = 15
 
 
 def tray_now(db, cls, tray):
+    out = _tray_now(db, cls, tray)
+    if out:
+        from .agronomy import advise
+        from .safety import KIT_MAX_SECONDS, school_settings
+        limit = min(school_settings(db, cls["school_id"])["pump_max_seconds"], KIT_MAX_SECONDS)
+        out["advice"] = advise(db, cls, tray, out.get("moisture"), limit)
+    return out
+
+
+def _tray_now(db, cls, tray):
     if not tray:
         return None
     if cls["sim_enabled"]:

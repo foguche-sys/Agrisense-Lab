@@ -63,7 +63,7 @@ hr { border: 0; border-top: 1px solid var(--line); margin: 18px 0; }
 .eyebrow { font-family: var(--head); font-size: 12px; font-weight: 600; letter-spacing: .09em; text-transform: uppercase; color: var(--brand); margin-bottom: 4px; }
 
 /* layout */
-.grid { display: grid; gap: var(--gap); }
+.grid { display: grid; gap: var(--gap); align-items: start; }
 .g2 { grid-template-columns: repeat(2, minmax(0, 1fr)); } .g3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .g4 { grid-template-columns: repeat(4, minmax(0, 1fr)); } .g5 { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 .side { grid-template-columns: minmax(0, 1fr) 360px; }
@@ -142,6 +142,25 @@ table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
 .kv { display: grid; grid-template-columns: repeat(3, 1fr); gap: 6px; font-size: 13px; margin-top: 8px; }
 .kv b { display: block; font-size: 15px; font-variant-numeric: tabular-nums; }
 .running { outline: 3px solid var(--info); }
+
+/* soil water bar: fill + refill point + field capacity marks, zones shaded */
+.soilbar { position: relative; height: 14px; border-radius: 7px; margin: 10px 0 6px; border: 1px solid var(--line-2);
+  background: linear-gradient(90deg, var(--bad-soft) 0 var(--wp, 0%), var(--warn-soft) var(--wp, 0%) var(--refill, 0%), var(--soft) var(--refill, 0%) var(--fc, 100%), var(--info-soft) var(--fc, 100%)); }
+.soilbar-fill { position: absolute; left: 0; top: 3px; bottom: 3px; border-radius: 4px; background: var(--brand); transition: width .6s; }
+.soilbar .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; border-radius: 1px; }
+.soilbar .mark.refill { left: var(--refill); background: var(--warn); }
+.soilbar .mark.fc { left: var(--fc); background: var(--info); }
+.advice { display: block; min-height: 2.6em; color: var(--ink-2); font-size: 12.5px; line-height: 1.35; }
+.crop { color: var(--brand-ink); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--muted); }
+.legend i { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 5px; vertical-align: -1px; }
+.advisor { border-left: 4px solid var(--brand); }
+.advisor.warn { border-left-color: var(--warn); } .advisor.bad { border-left-color: var(--bad); } .advisor.info { border-left-color: var(--info); }
+.loop { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 6px 0 2px; }
+.loop div { background: var(--soft); border-radius: 10px; padding: 8px 10px; font-size: 12.5px; color: var(--muted); }
+.loop b { display: block; color: var(--ink); font-family: var(--head); font-size: 15px; }
+.loop .on { background: var(--brand-soft); } .loop .on b { color: var(--brand-ink); }
+@media (max-width: 760px) { .loop { grid-template-columns: repeat(2, 1fr); } }
 
 /* Studio blocks */
 .blocks { display: grid; gap: 16px; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }

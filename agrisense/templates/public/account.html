@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}My account{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="narrow"><div class="card">
+  <div class="eyebrow">My account</div><h1>{{ g.user.name }}</h1>
+  {% if student %}<p class="muted">Students sign in with the class code and pictures. If you forget your pictures, ask your teacher for a new card.</p>
+  {% else %}
+  {% if forced %}<div class="flash ok">You signed in with a temporary password. Choose your own password to continue.</div>{% endif %}
+  <p class="muted">{{ g.user.email }}</p>
+  <form method="post">{{ csrf() }}
+    <div class="field"><label for="cur">{{ 'Temporary password' if forced else 'Current password' }}</label><input id="cur" type="password" name="current" autocomplete="current-password" required></div>
+    <div class="field"><label for="new">New password</label><input id="new" type="password" name="new" minlength="10" autocomplete="new-password" required><div class="hint">At least 10 characters.</div></div>
+    <div class="field"><label for="again">New password again</label><input id="again" type="password" name="again" minlength="10" autocomplete="new-password" required></div>
+    <button class="btn primary">Change password</button></form>
+  {% endif %}
+</div></div>
+{% endblock %}

@@ -39,6 +39,10 @@ def create_app(test_config=None):
             maybe_run(database)
         auth.load_user()
         auth.check_csrf()
+        u = g.user
+        if u and u["must_change_password"] and u["email"] and request.endpoint not in ("public.account", "public.logout", "static"):
+            from flask import redirect, url_for
+            return redirect(url_for("public.account"))
 
     app.teardown_appcontext(close_db)
 
@@ -83,6 +87,13 @@ def create_app(test_config=None):
     from .routes import admin, api, data, public, staff, student, studio, teacher
     for bp in (public.bp, admin.bp, teacher.bp, student.bp, studio.bp, data.bp, staff.bp, api.bp):
         app.register_blueprint(bp)
+
+    @app.errorhandler(500)
+    def _server_error(e):
+        if request.path.startswith("/api/"):
+            return {"ok": False, "error": "Server error. It has been logged; try again in a minute."}, 500
+        return render_template("error.html", code=500, title="Something went wrong on our side",
+                               text="It has been logged. Try again in a minute; if it keeps happening, email " + app.config["SUPPORT_EMAIL"] + "."), 500
 
     for code, title, text in [(401, "Please sign in", "Your session ended. Sign in again."), (400, "Something went wrong", None), (403, "You don't have access to this page",
                                "Ask your teacher or school admin if you think you should."),

@@ -60,7 +60,8 @@ CREATE TABLE IF NOT EXISTS trays (
   kit_id TEXT NOT NULL REFERENCES kits(id),
   letter TEXT NOT NULL,                  -- A..E
   soil TEXT NOT NULL,                    -- sandy | loam | clay | fertilized | salty
-  label TEXT NOT NULL
+  label TEXT NOT NULL,
+  crop TEXT                              -- see services/agronomy.py CROPS
 );
 
 CREATE TABLE IF NOT EXISTS classes (
@@ -155,6 +156,9 @@ CREATE TABLE IF NOT EXISTS pump_requests (
   seconds INTEGER NOT NULL,
   reason TEXT,
   moisture_before REAL,
+  prediction REAL,                       -- the team's predicted moisture after watering
+  moisture_after REAL,                   -- what the probe read once the water soaked in
+  checked_at TEXT,
   status TEXT NOT NULL,                  -- pending | approved | declined | stopped | done
   decided_by TEXT,
   decided_at TEXT,

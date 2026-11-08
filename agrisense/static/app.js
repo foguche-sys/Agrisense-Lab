@@ -95,12 +95,14 @@
           set("moisture", t.moisture === null || t.moisture === undefined ? "—" : (Math.round(t.moisture * 10) / 10));
           set("temp", fmt(t.temp, "°C")); set("ec", t.ec === null || t.ec === undefined ? "dry" : fmt(t.ec, ""));
           set("ph", fmt(t.ph, "")); set("at", t.simulated ? "simulated · day " + t.sim_day + " " + t.sim_clock : ago(t.at));
-          var m = $(".meter", tile); if (m && t.moisture !== null && t.moisture !== undefined) {
-            m.firstElementChild.style.width = Math.min(100, t.moisture / 45 * 100) + "%"; m.classList.toggle("dry", !!t.too_dry);
+          var fill = $(".soilbar-fill", tile);
+          if (fill && t.moisture !== null && t.moisture !== undefined) fill.style.width = Math.min(100, t.moisture / 45 * 100) + "%";
+          var a = t.advice, flag = $('[data-k="flag"]', tile), labels = { wilting: "Wilting risk", water: "Water now", wet: "Too wet", ok: "OK" };
+          if (flag) {
+            if (t.stale && !t.simulated) { flag.textContent = "No recent data"; flag.className = "pill bad"; }
+            else if (a) { flag.textContent = labels[a.status]; flag.className = "pill " + a.tone; }
           }
-          var flag = $('[data-k="flag"]', tile);
-          if (flag) { flag.textContent = t.too_dry ? "Too dry" : (t.stale && !t.simulated ? "No recent data" : "OK");
-            flag.className = "pill " + (t.too_dry ? "warn" : (t.stale && !t.simulated ? "bad" : "ok")); }
+          set("advice", a ? a.text : "");
           tile.classList.toggle("running", !!running[t.id]);
         });
         var pc = $("[data-pending-count]"); if (pc) pc.textContent = j.pending;
@@ -137,6 +139,15 @@
         var want = (b.dataset.on || "ON").toUpperCase(), isOn = v !== null && v !== undefined && String(v).toUpperCase() === want;
         var lamp = $(".lamp", b); lamp.classList.toggle("on", isOn); lamp.classList.toggle("alarm", v !== null && v !== undefined && !isOn);
         $(".big", b).textContent = v === null || v === undefined ? "—" : String(v);
+      } else if (type === "soilwater") {
+        var bar = $(".soilbar", b), n = Number(v), st = $(".soil-status", b);
+        $(".big", b).textContent = fmt(v, s.unit);
+        if (v !== null && v !== undefined && !isNaN(n)) {
+          $(".soilbar-fill", b).style.width = Math.min(100, n / 45 * 100) + "%";
+          var wp = +bar.dataset.wp, rf = +bar.dataset.refill, fc = +bar.dataset.fc;
+          st.textContent = n < wp ? "Wilting risk: water now" : n <= rf ? "At the refill point: water now" : n > fc + 1 ? "Too wet: let it drain" : "Healthy range";
+          st.style.color = n <= rf ? "var(--warn-ink)" : n > fc + 1 ? "var(--info)" : "var(--brand-ink)";
+        }
       } else if (type === "stream") {
         var list = $(".stream", b);
         if (v !== null && v !== undefined && list.dataset.last !== s.at) {

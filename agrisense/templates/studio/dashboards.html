@@ -1,16 +1,16 @@
-{% extends "base.html" %}{% block title %}IoT Studio{% endblock %}
+{% extends "base.html" %}{% block title %}Field Studio{% endblock %}
 {% from "partials/macros.html" import csrf, studio_tabs with context %}
 {% block body %}
 {{ studio_tabs(team, 'dash', teams, 'Dashboards') }}
 <div class="grid g3">
   {% for d in dashboards %}{% set n = d.blocks|jload|length %}
-  <a class="card" href="{{ url_for('studio.dashboard', did=d.id, **({'team': team.id} if teams else {})) }}" style="color:inherit"><h3>{{ d.name }}</h3><small class="muted">{{ n }} block{{ 's' if n != 1 }} · made {{ d.created_at|ago }}</small></a>
+  <a class="card" href="{{ url_for('studio.dashboard', did=d.id, **({'team': team.id} if teams else {})) }}" style="color:inherit"><h3>{{ d.name }}</h3><small class="muted">{{ n }} widget{{ 's' if n != 1 }} · made {{ d.created_at|ago }}</small></a>
   {% endfor %}
   {% if can_edit %}
   <div class="card flat"><h3>New dashboard</h3>
     <form method="post" action="{{ url_for('studio.new_dashboard', **({'team': team.id} if teams else {})) }}">{{ csrf() }}
       <div class="field"><input name="name" placeholder="Irrigation control" aria-label="Dashboard name"></div>
-      <label class="check"><input type="checkbox" name="starter" value="1" checked> Start with pump, fan, moisture, temperature, pressure, tank and vent blocks</label>
+      <label class="check"><input type="checkbox" name="starter" value="1" checked> Start with pump, fan, soil water, temperature, pressure, tank and vent widgets</label>
       <button class="btn primary" style="margin-top:10px">Create</button></form></div>
   {% elif not dashboards %}<div class="card empty">This team hasn't made a dashboard yet.</div>{% endif %}
 </div>

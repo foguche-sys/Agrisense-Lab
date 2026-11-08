@@ -1,7 +1,7 @@
-{% extends "base.html" %}{% block title %}Code & key{% endblock %}
+{% extends "base.html" %}{% block title %}API & keys{% endblock %}
 {% from "partials/macros.html" import csrf, studio_tabs with context %}
 {% block body %}
-{{ studio_tabs(team, 'code', teams, 'Code & key') }}
+{{ studio_tabs(team, 'code', teams, 'API & keys') }}
 {% set feed = (feeds|selectattr('kind','equalto','manual')|first) %}
 {% set fkey = feed.key if feed else team.slug ~ '.plant-height' %}
 <div class="grid side">

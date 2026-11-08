@@ -51,7 +51,7 @@ Commands:
 
 ## Team code (`X-Team-Key` header)
 
-A team makes its key in IoT Studio → Code & key. Feed keys look like `agri03-team-1.fan`. The team prefix is optional.
+A team makes its key in Field Studio → API & keys. Feed keys look like `agri03-team-1.fan`. The team prefix is optional.
 
 | Call | What it does |
 |---|---|

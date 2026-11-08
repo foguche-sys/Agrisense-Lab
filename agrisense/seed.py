@@ -44,7 +44,7 @@ def run(db):
     db.insert("orgs", id=org, name="Boone County Schools (demo)", kind="client", client_type="district", state="MO", created_at=now())
     sch = new_id("sch")
     db.insert("schools", id=sch, org_id=org, name="Columbia Demo High School", city="Columbia", state="MO",
-              timezone="America/Chicago", settings=jdump({"pump_max_seconds": 300, "class_hours_only": False}), created_at=now())
+              timezone="America/Chicago", settings=jdump({"pump_max_seconds": 300, "class_hours_only": False, "parents_enabled": True}), created_at=now())
     _user(db, "Dana District", "district@demo.agrisensehub.com", "client_admin", org_id=org)
     _user(db, "Priya Privacy", "privacy@demo.agrisensehub.com", "privacy", org_id=org)
     _user(db, "Alex Admin", "admin@demo.agrisensehub.com", "school_admin", school_id=sch)
@@ -60,11 +60,11 @@ def run(db):
     kit = new_id("kit")
     db.insert("kits", id=kit, school_id=sch, name="Soil bench 1", created_at=now())
     trays = []
-    for letter, soil, label in [("A", "sandy", "Sandy"), ("B", "loam", "Loam"), ("C", "clay", "Clay"),
-                                ("D", "fertilized", "Fertilized loam"), ("E", "salty", "Salty loam")]:
+    for letter, soil, label, crop in [("A", "sandy", "Sandy", "lettuce"), ("B", "loam", "Loam", "corn"), ("C", "clay", "Clay", "soybean"),
+                                      ("D", "fertilized", "Fertilized loam", "tomato"), ("E", "salty", "Salty loam", "none")]:
         tid = new_id("tr")
-        db.insert("trays", id=tid, kit_id=kit, letter=letter, soil=soil, label=label)
-        trays.append({"id": tid, "letter": letter, "soil": soil, "label": label, "kit_id": kit})
+        db.insert("trays", id=tid, kit_id=kit, letter=letter, soil=soil, label=label, crop=crop)
+        trays.append({"id": tid, "letter": letter, "soil": soil, "label": label, "kit_id": kit, "crop": crop})
 
     keys = {}
 
@@ -156,7 +156,7 @@ def run(db):
     db.insert("dashboards", id=new_id("db"), team_id=t1["id"], name="Irrigation control", created_at=now(), blocks=jdump([
         {"id": new_id("b"), "type": "toggle", "feed": f"{s}.pump", "title": "Pump"},
         {"id": new_id("b"), "type": "toggle", "feed": f"{s}.fan", "title": "Fan"},
-        {"id": new_id("b"), "type": "gauge", "feed": f"{s}.moisture", "title": "Soil moisture", "min": 0, "max": 50},
+        {"id": new_id("b"), "type": "soilwater", "feed": f"{s}.moisture", "title": "Soil water"},
         {"id": new_id("b"), "type": "indicator", "feed": f"{s}.tank", "title": "Tank", "on": "OK"},
         {"id": new_id("b"), "type": "chart", "feed": f"{s}.pressure", "title": "Pressure (kPa)", "hours": 1},
         {"id": new_id("b"), "type": "slider", "feed": f"{s}.vent", "title": "Vent servo", "min": 0, "max": 180},
@@ -174,7 +174,7 @@ def run(db):
     tray_b = trays[1]["id"]
     s1 = db.val("SELECT user_id FROM memberships WHERE team_id = ? AND role = 'student'", db.val("SELECT id FROM teams WHERE slug = 'agri03-team-2'"))
     db.insert("pump_requests", id=new_id("pr"), class_id=cls, team_id=db.val("SELECT id FROM teams WHERE slug = 'agri03-team-2'"), tray_id=tray_b,
-              requested_by=s1, seconds=40, reason="Moisture 14 %, under our 18 % target", moisture_before=14.0, status="pending", simulated=0, created_at=now())
+              requested_by=s1, seconds=40, reason="Moisture 14 %, under our 18 % target", moisture_before=14.0, prediction=18.0, status="pending", simulated=0, created_at=now())
 
     lines = ["Demo loaded. Password for every adult account: " + DEMO_PASSWORD,
              "  owner@ support@ finance@ ops@ district@ privacy@ admin@ it@ teacher@ coteacher@ observer@ parent@  (all @demo.agrisensehub.com)",

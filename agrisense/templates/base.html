@@ -31,7 +31,7 @@
           <a href="{{ url_for('student.tray') }}" class="{{ 'on' if ep == 'student.tray' }}">Our tray</a>
         {% endif %}
         {% if any_role('student','teacher','co_teacher','substitute') %}
-          <a href="{{ url_for('studio.dashboards') }}" class="{{ 'on' if ep.startswith('studio.') }}">IoT Studio</a>
+          <a href="{{ url_for('studio.dashboards') }}" class="{{ 'on' if ep.startswith('studio.') }}">Field Studio</a>
         {% endif %}
         {% if my_roles|reject('in', ['parent','content','sales','finance','billing','substitute','owner','ops','support'])|list %}
           <a href="{{ url_for('data.explorer') }}" class="{{ 'on' if ep.startswith('data.') }}">Data</a>
@@ -45,7 +45,7 @@
     </nav>
     <div class="who">
       {% if g.user %}
-        <span class="avatar" aria-hidden="true">{{ g.user.name[:1] }}</span><span class="name">{{ g.user.name }}</span>
+        <a href="{{ url_for('public.account') }}" class="row" style="gap:8px;color:inherit" title="My account"><span class="avatar" aria-hidden="true">{{ g.user.name[:1] }}</span><span class="name">{{ g.user.name }}</span></a>
         <form method="post" action="{{ url_for('public.logout') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn small">Sign out</button></form>
       {% else %}
         <a class="btn small" href="{{ url_for('public.student_code') }}">Student sign-in</a>

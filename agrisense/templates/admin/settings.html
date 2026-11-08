@@ -10,11 +10,10 @@
     <div class="fields" style="margin-top:10px"><div><label for="hf">From</label><input id="hf" type="time" name="hours_from" value="{{ s.class_hours[0] }}"></div><div><label for="ht">To</label><input id="ht" type="time" name="hours_to" value="{{ s.class_hours[1] }}"></div></div>
   </div>
   <div class="card"><h2>Students and data</h2>
-    <div class="field"><label for="ss">Student sign-in</label><select id="ss" name="student_signin"><option value="pictures" {{ 'selected' if s.get('student_signin','pictures') == 'pictures' }}>Class code + two pictures</option><option value="sso" {{ 'selected' if s.get('student_signin') == 'sso' }}>School Google / Microsoft account (rostering)</option></select></div>
+    <p class="muted" style="margin-top:0">Students sign in with the class code and two pictures, so they need no email or password.</p>
     <label class="check"><input type="checkbox" name="parents_enabled" value="1" {{ 'checked' if s.get('parents_enabled') }}> Let parents see their own child's work</label>
     <div class="field" style="margin-top:10px"><label for="rd">Keep readings for (days)</label><input id="rd" type="number" name="retention_days" min="30" max="3650" value="{{ s.retention_days }}"></div>
-    <div class="fields"><div><label for="un">Units</label><select id="un" name="units"><option value="metric" {{ 'selected' if s.get('units','metric') == 'metric' }}>Metric (°C)</option><option value="us" {{ 'selected' if s.get('units') == 'us' }}>US (°F)</option></select></div>
-      <div><label for="tz">Time zone</label><select id="tz" name="timezone">{% for z in ['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'] %}<option {{ 'selected' if school.timezone == z }}>{{ z }}</option>{% endfor %}</select></div></div>
+    <div class="fields"><div><label for="tz">Time zone</label><select id="tz" name="timezone">{% for z in ['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'] %}<option {{ 'selected' if school.timezone == z }}>{{ z }}</option>{% endfor %}</select></div></div>
   </div>
   <div><button class="btn primary">Save settings</button></div>
 </form>

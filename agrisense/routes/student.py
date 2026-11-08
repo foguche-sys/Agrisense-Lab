@@ -3,6 +3,7 @@ from flask import Blueprint, abort, g, redirect, render_template, request, url_f
 
 from ..db import jdump, jload, new_id, now
 from ..services import safety
+from ..services.agronomy import decision_log
 from ..services.live import tray_now
 from .util import db, err, ok, student_team
 
@@ -45,7 +46,8 @@ def tray():
             reading = tray_now(d, cls, tr)
             try:
                 safety.request_bench(d, g.user, g.memberships, cls, tr, request.form.get("seconds"), request.form.get("reason"),
-                                     team_id=team["id"], moisture=reading.get("moisture") if reading else None)
+                                     team_id=team["id"], moisture=reading.get("moisture") if reading else None,
+                                     prediction=request.form.get("prediction"))
                 ok("Request sent to your teacher.")
             except safety.SafetyError as e:
                 err(str(e))
@@ -60,7 +62,9 @@ def tray():
     reqs = d.q("SELECT * FROM pump_requests WHERE team_id = ? ORDER BY created_at DESC LIMIT 6", team["id"])
     obs = d.q("SELECT o.*, u.name FROM observations o JOIN users u ON u.id = o.user_id WHERE o.team_id = ? ORDER BY o.created_at DESC LIMIT 12", team["id"])
     limit = min(safety.school_settings(d, cls["school_id"])["pump_max_seconds"], safety.KIT_MAX_SECONDS)
-    return render_template("student/tray.html", cls=cls, team=team, tray=tr, reading=reading, reqs=reqs, obs=obs, limit=limit)
+    log_rows = decision_log(d, cls, tr)
+    return render_template("student/tray.html", cls=cls, team=team, tray=tr, reading=reading, reqs=reqs, obs=obs, limit=limit,
+                           decisions=log_rows, advice=(reading or {}).get("advice"))
 
 
 @bp.route("/journal/<aid>", methods=["GET", "POST"])
@@ -93,7 +97,7 @@ def journal(aid):
         return redirect(url_for("student.journal", aid=aid))
     tray = d.one("SELECT * FROM trays WHERE id = ?", team["tray_id"]) if team["tray_id"] else None
     return render_template("student/journal.html", cls=cls, team=team, a=a, j=j, rows=jload(j["data_table"], []),
-                           parts=jload(a["parts"], []), tray=tray)
+                           parts=jload(a["parts"], []), tray=tray, decisions=decision_log(d, cls, tray) if tray else [])
 
 
 @bp.route("/parent")
@@ -107,6 +111,10 @@ def parent():
             if not child or not sm:
                 continue
             cls = d.one("SELECT * FROM classes WHERE id = ?", sm["class_id"])
+            from ..services.safety import school_settings
+            if not school_settings(d, cls["school_id"]).get("parents_enabled"):
+                kids.append({"child": child, "cls": cls, "off": True, "work": []})
+                continue
             team = d.one("SELECT * FROM teams WHERE id = ?", sm["team_id"]) if sm["team_id"] else None
             work = d.q("SELECT l.code, l.title, j.status, j.score, a.points FROM assignments a JOIN lessons l ON l.id = a.lesson_id "
                        "LEFT JOIN journals j ON j.assignment_id = a.id AND j.team_id = ? WHERE a.class_id = ? ORDER BY l.code",

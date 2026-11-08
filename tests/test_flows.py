@@ -330,3 +330,70 @@ def test_reprint_cards_gives_new_pictures(client, db):
     uid = db.val("SELECT id FROM users WHERE name = 'Maya L.'")
     html = client.post(f"/teach/{i['cls']}/teams", data={"_csrf": tok, "do": "reset_pics", "user_id": uid}).get_data(as_text=True)
     assert html.count('class="login-card"') == 1 and "Maya L." in html
+
+
+def test_temp_password_must_be_changed_and_parent_needs_child(client, db):
+    i = ids(db)
+    tok = login(client, "admin")
+    r = client.post(f"/admin/staff?school={i['school']}", data={"_csrf": tok, "name": "Pa", "email": "pa@x.org", "role": "parent"}, follow_redirects=True)
+    assert "Choose which student" in r.get_data(as_text=True)
+    assert db.val("SELECT COUNT(*) AS n FROM users WHERE email = 'pa@x.org'") == 0          # no empty account left behind
+    kid = db.val("SELECT id FROM users WHERE name = 'Maya L.'")
+    html = client.post(f"/admin/staff?school={i['school']}", data={"_csrf": tok, "name": "Pa", "email": "pa@x.org", "role": "parent", "child_id": kid},
+                       follow_redirects=True).get_data(as_text=True)
+    temp = html.split("(shown once): ")[1].split("<")[0].strip()
+    client.post("/logout", data={"_csrf": tok})
+    tok = csrf(client)
+    client.post("/login", data={"_csrf": tok, "email": "pa@x.org", "password": temp})
+    r = client.get("/me/parent")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/account")
+    tok = csrf(client, "/account")
+    client.post("/account", data={"_csrf": tok, "current": temp, "new": "brand-new-pass-1", "again": "brand-new-pass-1"})
+    assert "Maya L." in client.get("/me/parent").get_data(as_text=True)
+
+
+def test_farm_advisor_and_predict_check(client, db):
+    i = ids(db)
+    tok = login_student(client, db)                       # team 1, tray A: sandy + lettuce
+    html = client.get("/me/tray").get_data(as_text=True)
+    assert "Irrigation advisor" in html and "Refill point" in html
+    from agrisense.services.agronomy import bands
+    b = bands({"soil": "sandy", "crop": "lettuce"})
+    assert b["refill"] == 16.5 and b["fc"] == 21.0          # 21 - 0.30 x (21 - 6)
+    client.post("/me/tray", data={"_csrf": tok, "do": "water", "seconds": "30", "prediction": "19", "reason": "below refill"})
+    assert db.val("SELECT prediction FROM pump_requests WHERE team_id = ? AND status = 'pending'", i["t1"]) == 19.0
+    # one-click rule template
+    client.post("/studio/actions", data={"_csrf": tok, "do": "template", "tpl": "water"})
+    a = db.one("SELECT * FROM actions WHERE name = 'Water at the refill point'")
+    assert a["threshold"] == "16.5" and a["approved_by"] is None
+    live = client.get(f"/api/class/{i['cls']}/live").json
+    assert all("advice" in t for t in live["trays"])
+
+
+def test_check_fills_actual_after_watering(client, db):
+    i = ids(db)
+    tok = login_student(client, db, "Liam T.", code="AGRI05")          # simulated class
+    client.post("/me/tray", data={"_csrf": tok, "do": "water", "seconds": "60", "prediction": "25", "reason": "dry"})
+    client.post("/logout", data={"_csrf": tok})
+    tok = login(client, "teacher")
+    rid = db.val("SELECT id FROM pump_requests WHERE class_id = ? AND status = 'pending'", i["sim"])
+    client.post(f"/teach/{i['sim']}/pump/{rid}", data={"_csrf": tok, "do": "approve"})
+    db.run("UPDATE pump_requests SET decided_at = '2020-01-01T00:00:00Z', moisture_before = 10 WHERE id = ?", rid)
+    db.commit()
+    client.post("/logout", data={"_csrf": tok})
+    login_student(client, db, "Liam T.", code="AGRI05")
+    html = client.get("/me/tray").get_data(as_text=True)
+    assert db.val("SELECT moisture_after FROM pump_requests WHERE id = ?", rid) is not None
+    assert "Decision log" in html
+
+
+def test_migration_adds_new_columns(tmp_path):
+    import sqlite3
+    from agrisense.db import Database
+    path = tmp_path / "old.db"
+    con = sqlite3.connect(path)
+    con.execute("CREATE TABLE trays (id TEXT PRIMARY KEY, kit_id TEXT NOT NULL, letter TEXT NOT NULL, soil TEXT NOT NULL, label TEXT NOT NULL)")
+    con.commit(); con.close()
+    Database(f"sqlite:///{path}").init_schema()
+    cols = [r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(trays)")]
+    assert "crop" in cols

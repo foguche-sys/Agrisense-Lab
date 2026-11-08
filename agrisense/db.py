@@ -62,14 +62,28 @@ class Database:
         sql = open(_SCHEMA).read()
         return sql.replace("{AUTOID}", "BIGSERIAL PRIMARY KEY" if self.pg else "INTEGER PRIMARY KEY AUTOINCREMENT")
 
+    # Columns added after the first release. New databases get them from schema.sql;
+    # existing ones get them here, so redeploying never loses data.
+    MIGRATIONS = [
+        ("trays", "crop", "TEXT"),
+        ("pump_requests", "prediction", "REAL"),
+        ("pump_requests", "moisture_after", "REAL"),
+        ("pump_requests", "checked_at", "TEXT"),
+    ]
+
     def init_schema(self):
         con = self.connect()
         try:
             if self.pg:
                 with con.cursor() as cur:
                     cur.execute(self.schema_sql())
+                    for table, col, typ in self.MIGRATIONS:
+                        cur.execute(f"ALTER TABLE {table} ADD COLUMN IF NOT EXISTS {col} {typ}")
             else:
                 con.executescript(self.schema_sql())
+                for table, col, typ in self.MIGRATIONS:
+                    if col not in [r[1] for r in con.execute(f"PRAGMA table_info({table})")]:
+                        con.execute(f"ALTER TABLE {table} ADD COLUMN {col} {typ}")
             con.commit()
         finally:
             con.close()

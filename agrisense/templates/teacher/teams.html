@@ -23,6 +23,13 @@
   </div>
 {% endfor %}
 </div>
+{% if trays %}<div class="card" style="margin-top:20px"><h2>Crops on the bench</h2>
+  <p class="muted">The crop sets when each tray should be watered (shallow-rooted crops like lettuce need water sooner than corn).</p>
+  <div class="table-wrap"><table class="t"><tr><th>Tray</th><th>Soil</th><th>Crop</th></tr>
+  {% for tr in trays %}<tr><td><b>{{ tr.letter }}</b></td><td>{{ tr.label }}</td><td>
+    {% if allowed('classes.manage', class_id=cls.id) %}<form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="crop"><input type="hidden" name="tray_id" value="{{ tr.id }}">
+      <select name="crop" data-autosubmit style="width:auto" aria-label="Crop for tray {{ tr.letter }}">{% for k, c in crops.items() %}<option value="{{ k }}" {{ 'selected' if (tr.crop or 'none') == k }}>{{ c[0] }}</option>{% endfor %}</select></form>
+    {% else %}{{ crops[tr.crop or 'none'][0] }}{% endif %}</td></tr>{% endfor %}</table></div></div>{% endif %}
 {% set unteamed = students|selectattr('team_id', 'none')|list %}
 {% if unteamed %}<div class="card" style="margin-top:20px"><h3>Not in a team</h3>{% for s in unteamed %}<span class="pill">{{ s.name }}</span> {% endfor %}</div>{% endif %}
 {% endblock %}

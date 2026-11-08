@@ -1,4 +1,4 @@
-"""IoT Studio (Adafruit IO style): each team builds dashboards from feeds, switches its Trainer outputs,
+"""Field Studio: each team builds dashboards from feeds, switches its Trainer outputs,
 writes Actions, and gets a team key for its own code. Teachers can open any team in their class (read + lock)."""
 from flask import Blueprint, abort, g, redirect, render_template, request, url_for
 
@@ -19,6 +19,15 @@ BLOCKS = {
     "value": "Big number",
     "indicator": "Indicator light",
     "stream": "Stream (latest values)",
+    "soilwater": "Soil water bar (refill point + field capacity)",
+}
+
+RULE_TEMPLATES = {
+    "water": ("Water at the refill point", "moisture", "lt", None, "on", "pump", 20, 300,
+              "Pump ON for 20 s when soil moisture drops below your tray's refill point. Needs your teacher's OK."),
+    "cool": ("Cool the greenhouse", "air-temp", "gt", "30", "on", "fan", 30, 120, "Fan ON when the air is above 30 °C."),
+    "tank": ("Tank empty alarm", "tank", "eq", "LOW", "alert", None, 0, 600, "Send an alert when the tank level is LOW."),
+    "blocked": ("Blocked line alarm", "pressure", "gt", "150", "beep", None, 0, 300, "Beep when pressure is over 150 kPa (kinked tube or clogged emitter)."),
 }
 
 
@@ -91,7 +100,7 @@ def new_dashboard():
         blocks = [
             {"id": new_id("b"), "type": "toggle", "feed": f"{s}.pump", "title": "Pump"},
             {"id": new_id("b"), "type": "toggle", "feed": f"{s}.fan", "title": "Fan"},
-            {"id": new_id("b"), "type": "gauge", "feed": f"{s}.moisture", "title": "Soil moisture", "min": 0, "max": 50},
+            {"id": new_id("b"), "type": "soilwater", "feed": f"{s}.moisture", "title": "Soil water"},
             {"id": new_id("b"), "type": "gauge", "feed": f"{s}.air-temp", "title": "Air temperature", "min": 0, "max": 45},
             {"id": new_id("b"), "type": "chart", "feed": f"{s}.pressure", "title": "Pressure (kPa)", "hours": 1},
             {"id": new_id("b"), "type": "indicator", "feed": f"{s}.tank", "title": "Tank", "on": "OK"},
@@ -146,7 +155,10 @@ def dashboard(did):
         d.update("dashboards", did, blocks=jdump(blocks[:24]))
         return redirect(_url("studio.dashboard", team, did=did))
     fmap = {f["key"]: f for f in feeds}
-    return render_template("studio/dashboard.html", dash=dash, blocks=blocks, feeds=feeds, fmap=fmap, block_types=BLOCKS,
+    from ..services.agronomy import bands
+    tray = d.one("SELECT * FROM trays WHERE id = ?", team["tray_id"]) if team["tray_id"] else None
+    soil = bands(tray) if tray else bands({"soil": "loam", "crop": None})
+    return render_template("studio/dashboard.html", soil=soil, tray=tray, dash=dash, blocks=blocks, feeds=feeds, fmap=fmap, block_types=BLOCKS,
                            can_edit=can_edit, outputs=F.OUTPUTS, pump_max=TRAINER_PUMP_MAX, pump_rest=TRAINER_PUMP_REST,
                            **_common(cls, team))
 
@@ -224,6 +236,20 @@ def actions():
             abort(403)
         f = request.form
         act = f.get("do")
+        if act == "template" and f.get("tpl") in RULE_TEMPLATES:
+            name, comp, op, thr, effect, target, secs, rest, _ = RULE_TEMPLATES[f["tpl"]]
+            F.ensure_team_feeds(d, team, [comp] + ([target] if target else []))
+            if thr is None:
+                from ..services.agronomy import bands
+                tray = d.one("SELECT * FROM trays WHERE id = ?", team["tray_id"]) if team["tray_id"] else None
+                thr = str(bands(tray)["refill"]) if tray else "15"
+            d.insert("actions", id=new_id("ac"), team_id=team["id"], name=name, feed_key=f"{team['slug']}.{comp}", op=op,
+                     threshold=thr, effect=effect, target_feed=f"{team['slug']}.{target}" if target else None, seconds=max(secs, 1),
+                     rest_seconds=rest, start_hhmm="08:00", end_hhmm="15:30", enabled=1, created_at=now(),
+                     approved_by=g.user["id"] if auth.allowed("actions.approve", class_id=cls["id"]) else None)
+            ok(f"Rule “{name}” added." + (" Your teacher has to approve it before it can run the pump."
+                                          if target == "pump" and not auth.allowed("actions.approve", class_id=cls["id"]) else ""))
+            return redirect(_url("studio.actions", team))
         if act == "create":
             target = f.get("target_feed") or None
             if f.get("feed_key") not in keys or f.get("op") not in OPS or f.get("effect") not in EFFECTS:
@@ -255,7 +281,7 @@ def actions():
     for r in rules:
         r["text"] = describe(r)
     outputs = [f for f in feeds_ if f["key"].split(".")[-1] in F.OUTPUTS and f["team_id"]]
-    return render_template("studio/actions.html", rules=rules, feeds=feeds_, outputs=outputs, ops=OPS, effects=EFFECTS,
+    return render_template("studio/actions.html", rules=rules, templates=RULE_TEMPLATES, feeds=feeds_, outputs=outputs, ops=OPS, effects=EFFECTS,
                            can_edit=can_edit, pump_max=TRAINER_PUMP_MAX, pump_rest=TRAINER_PUMP_REST, **_common(cls, team))
 
 

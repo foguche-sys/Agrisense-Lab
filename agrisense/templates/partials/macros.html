@@ -15,11 +15,18 @@
 {% endmacro %}
 
 {% macro tray_tile(t, r) %}
+{% set adv = r.advice if r else none %}
+{% set labels = {'wilting': 'Wilting risk', 'water': 'Water now', 'wet': 'Too wet', 'ok': 'OK'} %}
 <div class="card tray" data-tray="{{ t.id }}">
-  <div class="row between"><span class="letter">TRAY {{ t.letter }}</span><span data-k="flag" class="pill {{ 'warn' if r and r.too_dry else 'ok' }}">{{ 'Too dry' if r and r.too_dry else 'OK' }}</span></div>
-  <div class="soil">{{ t.label }}</div>
+  <div class="row between"><span class="letter">TRAY {{ t.letter }}</span>
+    <span data-k="flag" class="pill {{ adv.tone if adv else '' }}">{{ labels[adv.status] if adv else 'No data' }}</span></div>
+  <div class="soil">{{ t.label }}{% if adv and t.crop and t.crop != 'none' %} · <span class="crop">{{ adv.crop }}</span>{% endif %}</div>
   <div class="row" style="align-items:baseline;gap:4px;margin-top:6px"><span class="stat" data-k="moisture">{{ '%.1f'|format(r.moisture) if r and r.moisture is not none else '—' }}</span><span class="unit">% moisture</span></div>
-  <div class="meter {{ 'dry' if r and r.too_dry }}"><span style="width:{{ ((r.moisture or 0) / 45 * 100)|round if r else 0 }}%"></span></div>
+  <div class="soilbar" {% if adv %}style="--wp:{{ adv.wp / 45 * 100 }}%;--refill:{{ adv.refill / 45 * 100 }}%;--fc:{{ adv.fc / 45 * 100 }}%"{% endif %}>
+    <span class="soilbar-fill" style="width:{{ ((r.moisture or 0) / 45 * 100)|round if r else 0 }}%"></span>
+    {% if adv %}<i class="mark refill" title="Refill point {{ adv.refill }} %"></i><i class="mark fc" title="Field capacity {{ adv.fc }} %"></i>{% endif %}
+  </div>
+  <small class="advice" data-k="advice">{{ adv.text if adv else '' }}</small>
   <div class="kv">
     <div><small>Temp</small><b data-k="temp">{{ r.temp ~ ' °C' if r and r.temp is not none else '—' }}</b></div>
     <div><small>EC µS/cm</small><b data-k="ec">{{ r.ec if r and r.ec is not none else 'dry' }}</b></div>
@@ -51,22 +58,22 @@
   <a href="{{ url_for('teacher.lessons', cid=cls.id) }}" class="{{ 'on' if here == 'lessons' }}">Lessons</a>
   <a href="{{ url_for('teacher.gradebook', cid=cls.id) }}" class="{{ 'on' if here == 'grades' }}">Gradebook</a>
   <a href="{{ url_for('teacher.teams', cid=cls.id) }}" class="{{ 'on' if here == 'teams' }}">Teams & students</a>
-  <a href="{{ url_for('studio.dashboards') }}">IoT Studio</a>
+  <a href="{{ url_for('studio.dashboards') }}">Field Studio</a>
 </nav>
 {% endmacro %}
 
 {% macro studio_tabs(team, here, teams, title) %}
 <div class="page-head">
-  <div><div class="eyebrow">IoT Studio · {{ team.name }}</div><h1>{{ title }}</h1></div>
+  <div><div class="eyebrow">Field Studio · {{ team.name }}</div><h1>{{ title }}</h1></div>
   {% if teams %}<form method="get" class="row"><label for="team-sw" style="margin:0">Team</label>
     <select id="team-sw" name="team" data-autosubmit style="width:auto">{% for t in teams %}<option value="{{ t.id }}" {{ 'selected' if t.id == team.id }}>{{ t.name }}</option>{% endfor %}</select></form>{% endif %}
 </div>
 {% set q = {} if not teams else {'team': team.id} %}
-<nav class="tabs" aria-label="IoT Studio">
+<nav class="tabs" aria-label="Field Studio">
   <a href="{{ url_for('studio.dashboards', **q) }}" class="{{ 'on' if here == 'dash' }}">Dashboards</a>
   <a href="{{ url_for('studio.feeds', **q) }}" class="{{ 'on' if here == 'feeds' }}">Feeds</a>
   <a href="{{ url_for('studio.devices', **q) }}" class="{{ 'on' if here == 'devices' }}">Devices</a>
-  <a href="{{ url_for('studio.actions', **q) }}" class="{{ 'on' if here == 'actions' }}">Actions</a>
-  <a href="{{ url_for('studio.code', **q) }}" class="{{ 'on' if here == 'code' }}">Code & key</a>
+  <a href="{{ url_for('studio.actions', **q) }}" class="{{ 'on' if here == 'actions' }}">Rules</a>
+  <a href="{{ url_for('studio.code', **q) }}" class="{{ 'on' if here == 'code' }}">API & keys</a>
 </nav>
 {% endmacro %}

@@ -149,7 +149,7 @@ def v1_commands():
     return jsonify({"ok": True, "commands": ingest.take_commands(d, dev), "config": cfg, "server_time": now()})
 
 
-# ---------------- team key (student code, like Adafruit IO's REST API) ----------------
+# ---------------- team key (students' own code) ----------------
 
 def _team_from_key():
     key = request.headers.get("X-Team-Key") or request.args.get("x-team-key")

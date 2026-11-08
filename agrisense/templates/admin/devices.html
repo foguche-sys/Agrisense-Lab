@@ -21,12 +21,13 @@
 
 {% for k in kits %}
 <div class="card" style="margin-top:20px"><h2>{{ k.name }} · trays</h2>
-  <div class="table-wrap"><table class="t"><tr><th>Tray</th><th>Soil</th><th>Label</th><th></th></tr>
+  <div class="table-wrap"><table class="t"><tr><th>Tray</th><th>Soil</th><th>Label</th><th>Crop</th></tr>
   {% for t in k.trays %}<tr><td><b>{{ t.letter }}</b></td>
     {% if manage %}<td colspan="3"><form method="post" action="{{ url_for('admin.update_tray', tray_id=t.id, school=school.id) }}" class="row">{{ csrf() }}
       <select name="soil" style="width:auto">{% for s in ['sandy','loam','clay','fertilized','salty'] %}<option {{ 'selected' if t.soil == s }}>{{ s }}</option>{% endfor %}</select>
-      <input name="label" value="{{ t.label }}" style="max-width:220px"><button class="btn small">Save</button></form></td>
-    {% else %}<td>{{ t.soil }}</td><td>{{ t.label }}</td><td></td>{% endif %}</tr>{% endfor %}</table></div></div>
+      <input name="label" value="{{ t.label }}" style="max-width:220px" aria-label="Label">
+      <select name="crop" style="width:auto" aria-label="Crop">{% for k, c in crops.items() %}<option value="{{ k }}" {{ 'selected' if (t.crop or 'none') == k }}>{{ c[0] }}</option>{% endfor %}</select><button class="btn small">Save</button></form></td>
+    {% else %}<td>{{ t.soil }}</td><td>{{ t.label }}</td><td>{{ crops[t.crop or 'none'][0] }}</td>{% endif %}</tr>{% endfor %}</table></div></div>
 {% endfor %}
 
 <div class="card" style="margin-top:20px"><h2>Devices</h2>

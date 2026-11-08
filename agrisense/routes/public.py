@@ -132,3 +132,28 @@ def signup():
 @bp.route("/privacy")
 def privacy():
     return render_template("public/privacy.html")
+
+
+@bp.route("/account", methods=["GET", "POST"])
+@auth.login_required
+def account():
+    """Change password. Adults given a temporary password are sent here until they pick their own."""
+    from werkzeug.security import check_password_hash
+    u = g.user
+    if not u["email"]:
+        return render_template("public/account.html", student=True)
+    if request.method == "POST":
+        f = request.form
+        if not check_password_hash(u["password_hash"] or "", f.get("current", "")):
+            err("Your current password isn't right.")
+        elif len(f.get("new", "")) < 10:
+            err("Use at least 10 characters for the new password.")
+        elif f.get("new") != f.get("again"):
+            err("The two new passwords don't match.")
+        elif f.get("new") == f.get("current"):
+            err("Pick a password different from the temporary one.")
+        else:
+            db().update("users", u["id"], password_hash=auth.hash_password(f["new"]), must_change_password=0)
+            ok("Password changed.")
+            return redirect(url_for("public.home"))
+    return render_template("public/account.html", forced=bool(u["must_change_password"]))

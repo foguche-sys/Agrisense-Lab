@@ -14,7 +14,7 @@ LESSONS = [
      "45 min", "bench", "HS-LS2-6,SEP-6", ["Compare EC", "Look up crop tolerance", "Recommend"]),
     ("1.6", "Build the Trainer pump loop", "activity", "Wire the pump, pressure sensor and tank switch on the Trainer Board and check NO FLOW protection.",
      "50 min", "trainer", "ETS1-2,SEP-2", ["Wire FIELD I/O", "Test pressure", "Trigger NO FLOW safely"]),
-    ("1.7", "My first dashboard", "activity", "In the IoT Studio, add feeds and blocks to control the fan and pump and chart the pressure.",
+    ("1.7", "My first dashboard", "activity", "In the Field Studio, add feeds and blocks to control the fan and pump and chart the pressure.",
      "40 min", "trainer", "SEP-8,ETS1-4", ["Create a dashboard", "Add toggles and a chart", "Test with your Trainer"]),
     ("1.8", "Smart irrigation rule", "lab", "Write an Action that waters when moisture drops below your threshold, then test and tune it.",
      "2 × 45 min", "trainer", "ETS1-3,SEP-2,SEP-6", ["Choose a threshold", "Write the Action", "Test, check, adjust"]),
@@ -23,7 +23,7 @@ LESSONS = [
 ]
 
 PLANS = [
-    ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9 and the IoT Studio."),
+    ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9 and the Field Studio."),
     ("school", "School", 120000, "Per kit per year: all lessons, unlimited classes, data exports, support."),
     ("district", "District", None, "Several schools: priced by quote, purchase order, privacy agreement, rostering."),
 ]

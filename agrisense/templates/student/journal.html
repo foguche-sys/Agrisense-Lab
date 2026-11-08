@@ -16,6 +16,7 @@
 </form>
 <div class="stack">
   <div class="card"><h3>Steps</h3><ol style="padding-left:18px">{% for p in parts %}<li>{{ p }}</li>{% endfor %}</ol></div>
+  {% if decisions %}<div class="card"><h3>Your watering decisions</h3><table class="t">{% for r in decisions %}<tr><td><small>{{ r.created_at[:16].replace('T',' ') }}</small></td><td>{{ r.seconds }} s</td><td>{{ r.moisture_before }} → {{ r.moisture_after if r.moisture_after is not none else '…' }} %</td><td><small>predicted {{ r.prediction if r.prediction is not none else '—' }}</small></td></tr>{% endfor %}</table></div>{% endif %}
   {% if tray %}<div class="card"><h3>Tray {{ tray.letter }} moisture</h3><div class="chart" data-series="{{ url_for('api.tray_history', tid=tray.id, **{'class': cls.id}) }}" data-label="Moisture"></div></div>{% endif %}
 </div>
 </div>

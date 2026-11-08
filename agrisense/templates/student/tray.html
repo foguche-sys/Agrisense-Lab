@@ -23,14 +23,38 @@
   </div>
   <div class="stack">
     <div data-live-class="{{ cls.id }}">{{ tray_tile(tray, reading) }}</div>
-    <div class="card"><h2>Ask for water</h2>
-      <p class="muted">Your teacher approves every run. The pump adds about 0.1 % moisture per second on this bench.</p>
-      <form method="post">{{ csrf() }}<input type="hidden" name="do" value="water">
-        <div class="field"><label for="ws">Seconds (1–{{ limit }})</label><input id="ws" type="number" name="seconds" min="1" max="{{ limit }}" value="30" required></div>
-        <div class="field"><label for="wr">Why? Use your data.</label><input id="wr" name="reason" maxlength="200" placeholder="Moisture is 12 %, below our 15 % target" required></div>
-        <button class="btn primary" {{ 'disabled' if not cls.pump_requests_allowed }}>Send request</button>
+    {% if advice %}
+    <div class="card advisor {{ advice.tone }}"><div class="eyebrow">Irrigation advisor</div>
+      <h3 style="margin-bottom:6px">{{ advice.text }}</h3>
+      <div class="legend" style="margin:8px 0">
+        <span><i style="background:var(--bad-soft)"></i>Wilting below {{ advice.wp }} %</span>
+        <span><i style="background:var(--warn)"></i>Refill point {{ advice.refill }} %</span>
+        <span><i style="background:var(--info)"></i>Field capacity {{ advice.fc }} %</span></div>
+      <p class="muted" style="margin:0;font-size:13.5px">{{ tray.label }} with {{ advice.crop|lower }}: water before {{ (advice.p * 100)|round|int }} % of the plant-available water is used up.
+        {% if advice.rate %}Drying about {{ '%.2f'|format(advice.rate) }} % per hour.{% endif %}
+        {% if advice.seconds %}About <b>{{ advice.seconds }} s</b> of pumping brings it back to {{ advice.target }} %
+        ({{ 'learned from your last runs' if advice.learned else 'bench estimate: ' ~ advice.per_s ~ ' % per second' }}).{% endif %}</p>
+    </div>{% endif %}
+    <div class="card"><h2>Predict, water, check</h2>
+      <div class="loop"><div class="on"><b>1 Predict</b>what moisture after?</div><div><b>2 Ask</b>teacher approves</div><div><b>3 Water</b>pump runs</div><div><b>4 Check</b>probe reads it</div></div>
+      <form method="post" style="margin-top:12px">{{ csrf() }}<input type="hidden" name="do" value="water">
+        <div class="fields">
+          <div><label for="ws">Seconds (1–{{ limit }})</label><input id="ws" type="number" name="seconds" min="1" max="{{ limit }}" value="{{ advice.seconds if advice and advice.seconds else 30 }}" required></div>
+          <div><label for="wp">I predict moisture after (%)</label><input id="wp" type="number" step="0.1" min="0" max="60" name="prediction" placeholder="{{ '%.1f'|format(advice.target) if advice else '' }}" required></div>
+        </div>
+        <div class="field" style="margin-top:12px"><label for="wr">Why? Use your data.</label><input id="wr" name="reason" maxlength="200" placeholder="Moisture is 12 %, below our refill point" required></div>
+        <button class="btn primary" {{ 'disabled' if not cls.pump_requests_allowed }}>Send to teacher</button>
         {% if not cls.pump_requests_allowed %}<p class="hint">Requests are paused by your teacher.</p>{% endif %}</form>
-      {% if reqs %}<table class="t" style="margin-top:12px">{% for r in reqs %}<tr><td>{{ r.seconds }} s</td><td><span class="pill {{ 'ok' if r.status in ('approved','done') else ('warn' if r.status == 'pending' else '') }}">{{ r.status }}</span></td><td><small>{{ r.created_at|ago }}</small></td></tr>{% endfor %}</table>{% endif %}
+    </div>
+    <div class="card"><h2>Decision log</h2>
+      {% if decisions %}<div class="table-wrap"><table class="t"><tr><th>When</th><th class="num">Before</th><th class="num">Predicted</th><th class="num">Actual</th><th>Result</th></tr>
+      {% for r in decisions %}<tr><td><small>{{ r.created_at|ago }}<br>{{ r.seconds }} s · {{ r.status }}</small></td>
+        <td class="num">{{ r.moisture_before if r.moisture_before is not none else '—' }}</td><td class="num">{{ r.prediction if r.prediction is not none else '—' }}</td>
+        <td class="num"><b>{{ r.moisture_after if r.moisture_after is not none else '…' }}</b></td>
+        <td>{% if r.error is not none %}<span class="pill {{ 'ok' if r.error|abs <= 2 else 'warn' }}">{{ 'Spot on' if r.error|abs <= 2 else ('%+.1f'|format(r.error) ~ ' off') }}</span>
+          {% elif r.status in ('approved','done') %}<small class="muted">checking after the water soaks in</small>{% else %}<small class="muted">—</small>{% endif %}</td></tr>{% endfor %}</table></div>
+      <p class="hint">“Actual” is read automatically after the water soaks in (10 min on the bench, 1 min in simulation). Use these rows as evidence in your journal.</p>
+      {% else %}<p class="muted" style="margin:0">No waterings yet. Your predictions and results will appear here.</p>{% endif %}
     </div>
   </div>
 </div>

@@ -49,7 +49,8 @@ def home():
     pending_actions = d.q("""SELECT a.*, t.name AS team FROM actions a JOIN teams t ON t.id = a.team_id
                              WHERE t.class_id = ? AND a.target_feed LIKE '%.pump' AND a.effect = 'on' AND a.approved_by IS NULL""", cls["id"])
     readings = {t["id"]: tray_now(d, cls, t) for t in trays}
-    return render_template("teacher/home.html", cls=cls, classes=classes, trays=trays, readings=readings, teams=teams, pending=pending,
+    chart_tray = next((t for t in trays if t["id"] == request.args.get("tray")), trays[0] if trays else None)
+    return render_template("teacher/home.html", cls=cls, classes=classes, trays=trays, readings=readings, chart_tray=chart_tray, teams=teams, pending=pending,
                            recent=recent, alerts=alerts, unlocked=safety.controls_unlocked(cls), pending_actions=pending_actions,
                            limit=min(safety.school_settings(d, cls["school_id"])["pump_max_seconds"], safety.KIT_MAX_SECONDS))
 
@@ -215,6 +216,12 @@ def teams(cid):
                 cards.append({"name": r["name"], "pics": pics, "team": teams.get(r["team_id"], "")})
             log(d, "students.new_pictures", f"{len(cards)} in {cls['name']}", school_id=cls["school_id"])
             return render_template("admin/cards.html", cls=cls, cards=cards, reprint=True)
+        elif act == "crop":
+            from ..services.agronomy import CROPS
+            tray = d.one("SELECT * FROM trays WHERE id = ? AND kit_id = ?", f.get("tray_id"), cls["kit_id"])
+            if tray and f.get("crop") in CROPS:
+                d.update("trays", tray["id"], crop=f["crop"])
+                ok(f"Tray {tray['letter']} is now growing {CROPS[f['crop']][0].lower()}. The advisor uses its watering needs.")
         elif act == "remove":
             m = d.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", f.get("user_id"), cid)
             if m:
@@ -227,4 +234,5 @@ def teams(cid):
     students = d.q("SELECT u.id, u.name, u.last_login, m.team_id FROM memberships m JOIN users u ON u.id = m.user_id "
                    "WHERE m.class_id = ? AND m.role = 'student' ORDER BY u.name", cid)
     trays = d.q("SELECT * FROM trays WHERE kit_id = ? ORDER BY letter", cls["kit_id"]) if cls["kit_id"] else []
-    return render_template("teacher/teams.html", cls=cls, teams=teams_, students=students, trays=trays)
+    from ..services.agronomy import CROPS
+    return render_template("teacher/teams.html", cls=cls, teams=teams_, students=students, trays=trays, crops=CROPS)
