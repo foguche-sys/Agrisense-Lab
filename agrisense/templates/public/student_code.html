@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Student sign-in{% endblock %}
+{% from "partials/macros.html" import csrf, pic with context %}
+{% block body %}
+<div class="narrow" style="max-width:720px">
+{% if not cls %}
+  <div class="card">
+    <div class="eyebrow">Step 1 of 3</div><h1>Type your class code</h1>
+    <p class="muted">Your teacher has it on the board. It has 6 letters and numbers.</p>
+    <form method="get" class="row"><input name="code" value="{{ code }}" maxlength="6" autocomplete="off" autocapitalize="characters" style="font-size:26px;letter-spacing:.2em;text-transform:uppercase;max-width:260px" aria-label="Class code" required autofocus>
+      <button class="btn primary">Next</button></form>
+  </div>
+{% elif not me %}
+  <div class="card">
+    <div class="eyebrow">Step 2 of 3 · {{ cls.name }}</div><h1>Tap your name</h1>
+    {% if students %}<div class="names">{% for s in students %}<a href="{{ url_for('public.student_code', code=cls.code, uid=s.id) }}">{{ s.name }}<br><small class="muted">{{ s.team or '' }}</small></a>{% endfor %}</div>
+    {% else %}<p class="empty">Your teacher hasn't added students yet.</p>{% endif %}
+    <p style="margin-top:14px"><a href="{{ url_for('public.student_code') }}">← Different class</a></p>
+  </div>
+{% else %}
+  <div class="card">
+    <div class="eyebrow">Step 3 of 3 · {{ cls.name }}</div><h1>Hi {{ me.name }}! Tap your two pictures</h1>
+    <form method="post" data-pic-form action="{{ url_for('public.student_code', code=cls.code, uid=me.id) }}">{{ csrf() }}
+      <input type="hidden" name="pics" value="">
+      <div class="pics">{% for p in pictures %}<button type="button" class="pic" data-pic="{{ p }}" aria-pressed="false">{{ pic(p) }}<span>{{ p }}</span></button>{% endfor %}</div>
+      <div class="row between" style="margin-top:16px"><span data-chosen class="muted">Tap your two pictures</span><button type="submit" class="btn primary" disabled>Sign in</button></div>
+    </form>
+    <p style="margin-top:14px"><a href="{{ url_for('public.student_code', code=cls.code) }}">← Not me</a></p>
+  </div>
+{% endif %}
+</div>
+{% endblock %}

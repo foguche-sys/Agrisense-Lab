@@ -1,0 +1,11 @@
+{% extends "base.html" %}{% block title %}{{ inv.number }}{% endblock %}
+{% block body %}
+<div class="narrow" style="max-width:760px"><div class="card">
+  <div class="row between"><div><div class="eyebrow">AgriSense Hub</div><h1>{{ 'Quote' if inv.kind == 'quote' else 'Invoice' }} {{ inv.number }}</h1></div><button class="btn no-print" data-print>Print / PDF</button></div>
+  <p><b>{{ inv.client }}</b><br><small class="muted">Issued {{ inv.created_at[:10] }}{% if inv.due_on %} · due {{ inv.due_on }}{% endif %}{% if inv.po_number %} · PO {{ inv.po_number }}{% endif %}</small></p>
+  <table class="t"><tr><th>Item</th><th class="num">Qty</th><th class="num">Unit</th><th class="num">Total</th></tr>
+  {% for l in lines %}<tr><td>{{ l.desc }}</td><td class="num">{{ l.qty }}</td><td class="num">{{ l.unit_cents|money }}</td><td class="num">{{ (l.qty * l.unit_cents)|money }}</td></tr>{% endfor %}
+  <tr><td colspan="3" class="num"><b>Total</b></td><td class="num"><b>{{ inv.amount_cents|money }}</b></td></tr></table>
+  <p class="muted" style="margin-top:14px">Status: {{ inv.status }}. Pay by purchase order, ACH or card; remittance details are on the emailed copy.</p>
+</div></div>
+{% endblock %}

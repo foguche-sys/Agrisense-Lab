@@ -1,0 +1,62 @@
+{% extends "base.html" %}{% block title %}{{ cls.name }} · live bench{% endblock %}
+{% from "partials/macros.html" import csrf, tray_tile, teach_tabs with context %}
+{% block body %}
+<div class="page-head">
+  <div><div class="eyebrow">Class code <span class="mono">{{ cls.code }}</span></div><h1>{{ cls.name }}</h1></div>
+  <div class="row">
+    {% if classes|length > 1 %}<form method="get" class="row"><select name="class" data-autosubmit aria-label="Class" style="width:auto">{% for c in classes %}<option value="{{ c.id }}" {{ 'selected' if c.id == cls.id }}>{{ c.name }}</option>{% endfor %}</select></form>{% endif %}
+    {% if allowed('pump.stop', class_id=cls.id) %}<form method="post" action="{{ url_for('teacher.stop', cid=cls.id) }}">{{ csrf() }}<button class="btn stop" title="Stops every pump in this class now">■ STOP ALL PUMPS</button></form>{% endif %}
+  </div>
+</div>
+{{ teach_tabs(cls, 'home') }}
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Readings are made up from each soil's behaviour (×{{ cls.sim_speed }} speed{{ ', ' ~ cls.sim_event.replace('_',' ') if cls.sim_event and cls.sim_event != 'none' }}). Pump approvals water the simulated trays only.</div>{% endif %}
+{% for a in alerts %}<div class="banner warn"><b>{{ a.kind.replace('_',' ')|upper }}</b> {{ a.message }} <small>{{ a.created_at|ago }}</small>
+  <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}" class="inline" style="margin-left:auto">{{ csrf() }}<input type="hidden" name="do" value="resolve_alert"><input type="hidden" name="alert_id" value="{{ a.id }}"><button class="btn small">Dismiss</button></form></div>{% endfor %}
+
+{% if trays %}
+<div class="grid g5" data-live-class="{{ cls.id }}">{% for t in trays %}{{ tray_tile(t, readings[t.id]) }}{% endfor %}</div>
+{% else %}<div class="card empty">This class has no kit yet. Ask your school admin to attach one, or turn on simulation below.</div>{% endif %}
+
+<div class="grid side" style="margin-top:20px">
+  <div class="stack">
+    <div class="card"><div class="card-head"><h2>Pump requests <span class="pill info" data-pending-count>{{ pending|length }}</span></h2>
+      {% if allowed('pump.approve', class_id=cls.id) %}<form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}" class="row">{{ csrf() }}<input type="hidden" name="do" value="pump_requests"><input type="hidden" name="on" value="{{ '0' if cls.pump_requests_allowed else '1' }}">
+        <button class="btn small">{{ 'Pause requests' if cls.pump_requests_allowed else 'Allow requests' }}</button></form>{% endif %}</div>
+      {% for p in pending %}
+      <div class="row between" style="padding:10px 0;border-bottom:1px solid var(--line-2)">
+        <div><b>{{ p.team or p.who }}</b> · tray {{ p.letter }} · <b>{{ p.seconds }} s</b>{% if p.moisture_before is not none %} · moisture {{ p.moisture_before }} %{% endif %}<br><small class="muted">“{{ p.reason or 'no reason given' }}” · {{ p.who }} · {{ p.created_at|ago }}</small></div>
+        {% if allowed('pump.approve', class_id=cls.id) %}<div class="row">
+          <form method="post" action="{{ url_for('teacher.decide', cid=cls.id, rid=p.id) }}">{{ csrf() }}<input type="hidden" name="do" value="approve"><button class="btn primary small">Approve</button></form>
+          <form method="post" action="{{ url_for('teacher.decide', cid=cls.id, rid=p.id) }}">{{ csrf() }}<input type="hidden" name="do" value="decline"><button class="btn small">Decline</button></form></div>{% endif %}
+      </div>{% else %}<p class="muted" style="margin:0">No requests waiting. Students ask for water from their tray page (max {{ limit }} s).</p>{% endfor %}
+      {% if recent %}<details style="margin-top:12px"><summary>Recent runs</summary><table class="t" style="margin-top:8px">{% for r in recent %}<tr><td>{{ r.team or '' }}</td><td>tray {{ r.letter }}</td><td>{{ r.seconds }} s</td><td><span class="pill">{{ r.status }}</span>{% if r.simulated %} <span class="pill sim">sim</span>{% endif %}</td><td><small>{{ r.created_at|ago }}</small></td></tr>{% endfor %}</table></details>{% endif %}
+    </div>
+    {% if pending_actions %}<div class="card"><h2>Studio rules waiting for you</h2>
+      {% for a in pending_actions %}<div class="row between" style="padding:8px 0;border-bottom:1px solid var(--line-2)"><div><b>{{ a.team }}</b>: {{ a.name }}<br><small class="muted">When {{ a.feed_key }} {{ a.op }} {{ a.threshold }} → pump ON {{ a.seconds }} s, rest {{ a.rest_seconds }} s, {{ a.start_hhmm }}–{{ a.end_hhmm }}</small></div>
+        <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}">{{ csrf() }}<input type="hidden" name="do" value="approve_action"><input type="hidden" name="action_id" value="{{ a.id }}"><button class="btn small primary">Approve rule</button></form></div>{% endfor %}</div>{% endif %}
+    <div class="card"><h2>Teams</h2><div class="table-wrap"><table class="t"><tr><th>Team</th><th>Tray</th><th>Studio</th></tr>
+      {% for t in teams %}<tr><td>{{ t.name }}</td><td>{{ t.letter or '—' }}</td><td><a href="{{ url_for('studio.dashboards', team=t.id) }}">Open dashboards</a></td></tr>{% endfor %}</table></div></div>
+  </div>
+  <div class="stack">
+    {% if allowed('studio.lock', class_id=cls.id) %}
+    <div class="card"><h2>IoT Studio controls</h2>
+      <p>{% if unlocked %}<span class="pill ok">Unlocked</span> until {{ cls.controls_unlocked_until[11:16] }} UTC{% else %}<span class="pill">Locked</span> Students can see dashboards but can't switch outputs.{% endif %}</p>
+      <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}" class="row">{{ csrf() }}<input type="hidden" name="do" value="unlock">
+        {% if unlocked %}<input type="hidden" name="minutes" value="0"><button class="btn">Lock now</button>
+        {% else %}<select name="minutes" style="width:auto"><option value="20">20 min</option><option value="40" selected>40 min</option><option value="90">90 min</option></select><button class="btn primary">Unlock</button>{% endif %}</form>
+      <p class="hint">Trainer pumps always stop after 30 s and rest 60 s, and need the tank level OK.</p></div>
+    {% endif %}
+    {% if allowed('sim.control', class_id=cls.id) %}
+    <div class="card"><h2>Simulation</h2><p class="muted">Use simulated readings when there's no kit, the bench is being rebuilt, or to run a 2-day lab in one period.</p>
+      <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}">{{ csrf() }}<input type="hidden" name="do" value="sim">
+        <div class="fields"><div><label for="so">Data</label><select id="so" name="on"><option value="0" {{ 'selected' if not cls.sim_enabled }}>Live bench</option><option value="1" {{ 'selected' if cls.sim_enabled }}>Simulated</option></select></div>
+          <div><label for="se">Event</label><select id="se" name="event">{% for v, l in [('none','Normal'),('dry_spell','Dry spell'),('heat_wave','Heat wave')] %}<option value="{{ v }}" {{ 'selected' if (cls.sim_event or 'none') == v }}>{{ l }}</option>{% endfor %}</select></div>
+          <div><label for="sp">Speed</label><select id="sp" name="speed">{% for v, l in [(1,'Real time'),(60,'1 h per min'),(240,'4 h per min')] %}<option value="{{ v }}" {{ 'selected' if cls.sim_speed == v }}>{{ l }}</option>{% endfor %}</select></div></div>
+        <button class="btn" style="margin-top:10px">Apply</button></form></div>
+    {% endif %}
+    {% if trays %}<div class="card"><h3>Moisture, last 48 h · tray {{ trays[1].letter if trays|length > 1 else trays[0].letter }}</h3>
+      <div class="chart" data-series="{{ url_for('api.tray_history', tid=(trays[1] if trays|length > 1 else trays[0]).id, **{'class': cls.id}) }}" data-label="Moisture" data-band="15,30" data-every="20000"></div>
+      <small class="muted">Shaded band: target range for loam.</small></div>{% endif %}
+  </div>
+</div>
+{% endblock %}

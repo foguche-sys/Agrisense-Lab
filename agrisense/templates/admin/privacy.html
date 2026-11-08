@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Privacy{% endblock %}
+{% from "partials/macros.html" import admin_tabs, csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ school.name }}</div><h1>Privacy</h1></div></div>
+{{ admin_tabs(school, 'admin.privacy') }}
+<div class="grid g2">
+  <div class="card"><h2>Student data privacy agreement</h2>
+    {% set st = dpa.status if dpa else 'not_started' %}
+    <p>Status: <span class="pill {{ 'ok' if st in ('signed','countersigned') else 'warn' }}">{{ st.replace('_',' ') }}</span>{% if dpa and dpa.signed_by %} · signed by {{ dpa.signed_by }} on {{ dpa.signed_at[:10] }}{% endif %}</p>
+    <p class="muted">Version 2026.1 covers what we collect, who can see it, retention, deletion on request and breach notice.</p>
+    {% if allowed('privacy.manage', school_id=school.id) and st not in ('signed','countersigned') %}
+    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="sign"><label class="check"><input type="checkbox" required> I'm authorised to sign for {{ school.name }}.</label><button class="btn primary" style="margin-top:10px">Sign agreement</button></form>{% endif %}
+  </div>
+  <div class="card"><h2>AgriSense support access</h2>
+    <p class="muted">Support can't see your school unless you allow it here, for one ticket and a set time. Every view is in your activity log.</p>
+    {% set active = grants|selectattr('expires_at', 'gt', nowts)|list %}
+    {% if active %}<p><span class="pill info">Access open</span> until {{ active[0].expires_at }} (ticket {{ active[0].ticket }})</p>
+      <form method="post">{{ csrf() }}<input type="hidden" name="do" value="end_support"><button class="btn">End access now</button></form>
+    {% else %}
+    <form method="post" class="fields">{{ csrf() }}<input type="hidden" name="do" value="support">
+      <div><label for="tk">Ticket number</label><input id="tk" name="ticket" required></div>
+      <div><label for="hr">For</label><select id="hr" name="hours"><option value="4">4 hours</option><option value="24" selected>24 hours</option><option value="72">3 days</option></select></div>
+      <div><button class="btn">Allow support</button></div></form>{% endif %}
+  </div>
+</div>
+{% endblock %}

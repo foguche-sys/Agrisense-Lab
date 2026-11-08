@@ -1,0 +1,9 @@
+{% extends "base.html" %}{% block title %}Activity log{% endblock %}
+{% from "partials/macros.html" import admin_tabs with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ school.name }}</div><h1>Activity log</h1><p class="muted">Sign-ins aren't listed. Role changes, devices, pump approvals, exports and support views are.</p></div></div>
+{{ admin_tabs(school, 'admin.audit') }}
+<div class="card table-wrap"><table class="t"><tr><th>When (UTC)</th><th>Who</th><th>What</th><th>Detail</th></tr>
+{% for r in rows %}<tr><td><small class="mono">{{ r.created_at }}</small></td><td>{{ r.who or 'system' }}</td><td><span class="pill">{{ r.action }}</span></td><td><small>{{ r.detail }}</small></td></tr>
+{% else %}<tr><td colspan="4" class="empty">Nothing yet.</td></tr>{% endfor %}</table></div>
+{% endblock %}

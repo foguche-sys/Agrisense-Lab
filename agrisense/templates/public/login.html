@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}Sign in{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="narrow">
+  <div class="card">
+    <div class="eyebrow">Teachers, admins and staff</div>
+    <h1>Sign in</h1>
+    <form method="post">{{ csrf() }}
+      <div class="field"><label for="email">Email</label><input id="email" type="email" name="email" value="{{ email or '' }}" autocomplete="username" required autofocus></div>
+      <div class="field"><label for="pw">Password</label><input id="pw" type="password" name="password" autocomplete="current-password" required></div>
+      <button class="btn primary" style="width:100%">Sign in</button>
+    </form>
+    <hr>
+    <p class="muted" style="margin:0">Student? <a href="{{ url_for('public.student_code') }}">Sign in with your class code</a>. New school? <a href="{{ url_for('public.signup') }}">Start a pilot</a>.</p>
+  </div>
+</div>
+{% endblock %}

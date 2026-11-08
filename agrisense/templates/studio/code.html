@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% block title %}Code & key{% endblock %}
+{% from "partials/macros.html" import csrf, studio_tabs with context %}
+{% block body %}
+{{ studio_tabs(team, 'code', teams, 'Code & key') }}
+{% set feed = (feeds|selectattr('kind','equalto','manual')|first) %}
+{% set fkey = feed.key if feed else team.slug ~ '.plant-height' %}
+<div class="grid side">
+  <div class="stack">
+    <div class="card"><h2>Send data from Python</h2>
+<pre id="py">import requests
+KEY = "YOUR_TEAM_KEY"   # keep it in a secrets file, not in shared code
+URL = "{{ base }}/api/v1/feeds/{{ fkey }}/data"
+r = requests.post(URL, json={"value": 12.5}, headers={"X-Team-Key": KEY})
+print(r.json())</pre><button class="btn small" data-copy="py">Copy</button></div>
+    <div class="card"><h2>Switch the fan from Arduino (ESP32)</h2>
+<pre id="ino">#include &lt;WiFi.h&gt;
+#include &lt;HTTPClient.h&gt;
+#include "secrets.h"      // WIFI_SSID, WIFI_PASS, TEAM_KEY
+
+void setFan(const char* value) {
+  HTTPClient http;
+  http.begin("{{ base }}/api/v1/feeds/{{ team.slug }}.fan/data");
+  http.addHeader("Content-Type", "application/json");
+  http.addHeader("X-Team-Key", TEAM_KEY);
+  int code = http.POST(String("{\"value\":\"") + value + "\"}");
+  Serial.printf("fan %s -> HTTP %d\n", value, code);
+  http.end();
+}</pre><button class="btn small" data-copy="ino">Copy</button></div>
+    <div class="card"><h2>Read the latest value (curl)</h2>
+<pre id="curl">curl -H "X-Team-Key: YOUR_TEAM_KEY" {{ base }}/api/v1/feeds/{{ team.slug }}.moisture/data/last</pre><button class="btn small" data-copy="curl">Copy</button>
+      <p class="hint">Outputs follow the same safety rules as the dashboard: controls must be unlocked, and the pump runs at most 30 s.</p></div>
+  </div>
+  <div class="card"><h2>Team key</h2>
+    {% if new_key %}<div class="flash ok">Copy this key now. It won't be shown again.</div><pre id="key">{{ new_key }}</pre><button class="btn small" data-copy="key">Copy key</button>
+    {% elif team.key_hint %}<p>Key ending <b class="mono">…{{ team.key_hint }}</b>, expires {{ team.key_expires_at[:10] }}.</p>
+    {% else %}<p class="muted">No key yet.</p>{% endif %}
+    {% if can_edit %}<form method="post" style="margin-top:12px">{{ csrf() }}<button class="btn primary" name="do" value="new">{{ 'Make a new key' if team.key_hint else 'Make a key' }}</button>
+      {% if team.key_hint %}<button class="btn" name="do" value="revoke">Revoke</button>{% endif %}</form>
+      <p class="hint">Making a new key stops the old one working.</p>{% endif %}
+  </div>
+</div>
+{% endblock %}

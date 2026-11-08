@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block title %}Kits & devices{% endblock %}
+{% from "partials/macros.html" import admin_tabs, csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ school.name }}</div><h1>Kits & devices</h1></div></div>
+{{ admin_tabs(school, 'admin.devices') }}
+{% set manage = allowed('devices.manage', school_id=school.id) %}
+{% if manage %}
+<div class="grid g2">
+  <div class="card"><h2>Register a device</h2><p class="muted">Use the serial and claim code from the QR label on the gateway, node, pump node or Trainer Board.</p>
+    <form method="post" action="{{ url_for('admin.claim', school=school.id) }}" class="fields">{{ csrf() }}
+      <div><label for="sr">Serial</label><input id="sr" name="serial" placeholder="ND-1B33" required style="text-transform:uppercase"></div>
+      <div><label for="cc">Claim code</label><input id="cc" name="claim_code" placeholder="AB12-CD34" required style="text-transform:uppercase"></div>
+      <div><label for="kk">Kit</label><select id="kk" name="kit_id"><option value="">—</option>{% for k in kits %}<option value="{{ k.id }}">{{ k.name }}</option>{% endfor %}</select></div>
+      <div><label for="nm">Nickname</label><input id="nm" name="name" placeholder="optional"></div>
+      <div><button class="btn primary">Register</button></div>
+    </form></div>
+  <div class="card"><h2>Add a kit</h2><p class="muted">A kit is one soil bench: gateway, five trays (A–E), node probes and the pump node.</p>
+    <form method="post" action="{{ url_for('admin.add_kit', school=school.id) }}" class="row">{{ csrf() }}<input name="name" placeholder="Soil bench 1" style="max-width:260px"><button class="btn">Add kit</button></form></div>
+</div>
+{% endif %}
+
+{% for k in kits %}
+<div class="card" style="margin-top:20px"><h2>{{ k.name }} · trays</h2>
+  <div class="table-wrap"><table class="t"><tr><th>Tray</th><th>Soil</th><th>Label</th><th></th></tr>
+  {% for t in k.trays %}<tr><td><b>{{ t.letter }}</b></td>
+    {% if manage %}<td colspan="3"><form method="post" action="{{ url_for('admin.update_tray', tray_id=t.id, school=school.id) }}" class="row">{{ csrf() }}
+      <select name="soil" style="width:auto">{% for s in ['sandy','loam','clay','fertilized','salty'] %}<option {{ 'selected' if t.soil == s }}>{{ s }}</option>{% endfor %}</select>
+      <input name="label" value="{{ t.label }}" style="max-width:220px"><button class="btn small">Save</button></form></td>
+    {% else %}<td>{{ t.soil }}</td><td>{{ t.label }}</td><td></td>{% endif %}</tr>{% endfor %}</table></div></div>
+{% endfor %}
+
+<div class="card" style="margin-top:20px"><h2>Devices</h2>
+  <div class="table-wrap"><table class="t"><tr><th>Serial</th><th>Type</th><th>Status</th><th>Kit / tray / team</th><th>Signal · supply</th><th>Firmware</th><th>Assign</th><th></th></tr>
+  {% for d in devices %}<tr>
+    <td><b class="mono">{{ d.serial }}</b>{% if d.name and d.name != d.serial %}<br><small>{{ d.name }}</small>{% endif %}</td>
+    <td>{{ {'gateway':'Gateway','node':'Probe node','deck':'Build deck (node E)','pump':'Pump node','trainer':'Trainer Board'}[d.kind] }}</td>
+    <td>{% if d.status == 'online' %}<span class="pill ok"><span class="dot"></span>Online</span>{% elif d.status == 'retired' %}<span class="pill">Retired</span>{% else %}<span class="pill bad">Offline</span>{% endif %}<br><small class="faint">{{ d.last_seen|ago }}</small></td>
+    <td>{{ d.kit_name or '—' }}{% if d.tray_letter %} · tray {{ d.tray_letter }}{% endif %}{% if d.team_name %} · {{ d.class_name }} {{ d.team_name }}{% endif %}</td>
+    <td><small>{{ (d.rssi ~ ' dBm') if d.rssi is not none else '—' }} · {{ ('%.1f V'|format(d.supply_v)) if d.supply_v is not none else '—' }}</small></td>
+    <td><small class="mono">{{ d.firmware or '—' }}</small></td>
+    <td>{% if d.status != 'retired' %}<form method="post" action="{{ url_for('admin.update_device', dev_id=d.id, school=school.id) }}" class="row">{{ csrf() }}<input type="hidden" name="do" value="assign">
+      {% if d.kind in ('node','deck') %}<select name="tray_id" style="width:auto"><option value="">No tray</option>{% for k in kits %}{% for t in k.trays %}<option value="{{ t.id }}" {{ 'selected' if d.tray_id == t.id }}>{{ k.name }} · {{ t.letter }}</option>{% endfor %}{% endfor %}</select>
+      {% elif d.kind == 'trainer' %}<select name="team_id" style="width:auto"><option value="">No team</option>{% for t in teams %}<option value="{{ t.id }}" {{ 'selected' if d.team_id == t.id }}>{{ t.class_name }} · {{ t.name }}</option>{% endfor %}</select>
+      {% else %}<select name="kit_id" style="width:auto"><option value="">No kit</option>{% for k in kits %}<option value="{{ k.id }}" {{ 'selected' if d.kit_id == k.id }}>{{ k.name }}</option>{% endfor %}</select>{% endif %}
+      <button class="btn small">Save</button></form>{% endif %}</td>
+    <td class="row">{% if d.status != 'retired' %}
+      <form class="inline" method="post" action="{{ url_for('admin.update_device', dev_id=d.id, school=school.id) }}">{{ csrf() }}<input type="hidden" name="do" value="restart"><button class="btn small">Restart</button></form>
+      {% if manage %}<form class="inline" method="post" action="{{ url_for('admin.update_device', dev_id=d.id, school=school.id) }}" data-confirm="Retire {{ d.serial }}? It stops reporting to your school.">{{ csrf() }}<input type="hidden" name="do" value="retire"><button class="btn small">Retire</button></form>{% endif %}{% endif %}</td>
+  </tr>{% else %}<tr><td colspan="8" class="empty">No devices registered yet.</td></tr>{% endfor %}</table></div>
+</div>
+{% endblock %}

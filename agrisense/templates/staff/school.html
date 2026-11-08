@@ -1,0 +1,7 @@
+{% extends "base.html" %}{% block title %}{{ s.name }} (support){% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Support view · logged</div><h1>{{ s.name }}</h1>{% if granted %}<p class="muted">Access granted for ticket {{ granted.ticket }} until {{ granted.expires_at }}</p>{% endif %}</div></div>
+<div class="grid g2"><div class="card table-wrap"><h2>Devices</h2><table class="t"><tr><th>Serial</th><th>Type</th><th>Status</th><th>Last seen</th><th>Signal</th><th>Firmware</th></tr>
+  {% for d in devices %}<tr><td class="mono">{{ d.serial }}</td><td>{{ d.kind }}</td><td>{{ d.status }}</td><td>{{ d.last_seen|ago }}</td><td>{{ d.rssi or '—' }}</td><td class="mono">{{ d.firmware or '—' }}</td></tr>{% endfor %}</table></div>
+<div class="card"><h2>Alerts</h2>{% for a in alerts %}<p><span class="pill warn">{{ a.kind }}</span> {{ a.message }} <small class="faint">{{ a.created_at|ago }}</small></p>{% else %}<p class="muted">None.</p>{% endfor %}</div></div>
+{% endblock %}

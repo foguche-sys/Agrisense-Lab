@@ -1,0 +1,51 @@
+{% extends "base.html" %}{% block title %}{{ dash.name }}{% endblock %}
+{% from "partials/macros.html" import csrf, studio_tabs with context %}
+{% block body %}
+{{ studio_tabs(team, 'dash', teams, dash.name) }}
+<div class="banner warn" data-lock-note {{ 'hidden' if unlocked }}><b>Controls locked</b> You can watch the readings. Your teacher unlocks the switches during lab time.</div>
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED</b> Tray readings are simulated. Trainer feeds still come from your board.</div>{% endif %}
+{% set tq = {'team': team.id} if teams else {} %}
+<div class="blocks" data-studio-team="{{ team.id }}">
+{% for b in blocks %}{% set f = fmap.get(b.feed) %}
+  <div class="block {{ 'wide' if b.type in ('chart','stream') }}" data-feed="{{ b.feed }}" data-type="{{ b.type }}" data-min="{{ b.min if b.min is defined else '' }}" data-max="{{ b.max if b.max is defined else '' }}" data-hours="{{ b.hours if b.hours is defined else 1 }}" data-on="{{ b.on if b.on is defined else 'ON' }}">
+    <div class="block-head"><div style="min-width:0"><div class="block-title">{{ b.title }}</div><div class="block-feed">{{ b.feed }}</div></div>
+      {% if can_edit %}<div class="block-tools">
+        {% for act, sym, lab in [('up','↑','Move up'),('down','↓','Move down'),('remove','✕','Remove')] %}<form method="post" class="inline">{{ csrf() }}<input type="hidden" name="do" value="{{ act }}"><input type="hidden" name="block" value="{{ b.id }}"><button title="{{ lab }}" aria-label="{{ lab }}">{{ sym }}</button></form>{% endfor %}</div>{% endif %}</div>
+    <div class="block-body">
+      {% if not f %}<small class="muted">Feed not found. It may have been removed.</small>
+      {% elif b.type == 'toggle' %}<button class="switch" role="switch" aria-checked="false" aria-label="{{ b.title }}"></button><b class="toggle-state">OFF</b>
+        {% if b.feed.endswith('.pump') %}<small class="muted">Runs max {{ pump_max }} s, then rests {{ pump_rest }} s</small>{% endif %}
+      {% elif b.type == 'slider' %}<div class="big">—</div><input type="range" min="{{ b.min if b.min is defined else 0 }}" max="{{ b.max if b.max is defined else 100 }}" step="1" aria-label="{{ b.title }}">
+      {% elif b.type == 'gauge' %}<div class="gauge"><svg viewBox="0 0 160 96" aria-hidden="true"><path d="M10 88 A70 70 0 0 1 150 88" fill="none" stroke="var(--soft)" stroke-width="14" stroke-linecap="round"/><path class="gauge-arc" d="M10 88 A70 70 0 0 1 150 88" fill="none" stroke="var(--brand)" stroke-width="14" stroke-linecap="round" stroke-dasharray="0 300"/></svg></div><div class="big" style="margin-top:-6px">—</div>
+        <small class="faint">{{ b.min if b.min is defined else 0 }} – {{ b.max if b.max is defined else 100 }} {{ f.unit or '' }}</small>
+      {% elif b.type == 'value' %}<div class="big">—</div>
+      {% elif b.type == 'indicator' %}<div class="lamp"></div><b class="big" style="font-size:20px">—</b>
+      {% elif b.type == 'chart' %}<div class="chart" style="width:100%"></div>
+      {% elif b.type == 'stream' %}<div class="stream"></div>{% endif %}
+    </div>
+    <small class="faint block-at"></small>
+  </div>
+{% else %}<div class="card empty" style="grid-column:1/-1">No blocks yet. Add one below.</div>{% endfor %}
+</div>
+
+{% if can_edit %}
+<div class="grid g2" style="margin-top:24px">
+  <div class="card"><h2>Add a block</h2>
+    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="add">
+      <div class="fields">
+        <div><label for="bt">Block</label><select id="bt" name="type">{% for k, v in block_types.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+        <div><label for="bf">Feed</label><select id="bf" name="feed">{% for f in feeds %}<option value="{{ f.key }}">{{ f.key }}{{ ' (output)' if f.kind == 'output' }}</option>{% endfor %}</select></div>
+        <div><label for="bn">Title</label><input id="bn" name="title" placeholder="Pump"></div>
+        <div data-show-when="type=gauge|slider"><label>Min</label><input name="min" type="number" step="any" placeholder="0"></div>
+        <div data-show-when="type=gauge|slider"><label>Max</label><input name="max" type="number" step="any" placeholder="100"></div>
+        <div data-show-when="type=chart"><label>Hours shown</label><input name="hours" type="number" step="any" value="1"></div>
+        <div data-show-when="type=indicator"><label>Green when value is</label><input name="on" value="OK"></div>
+      </div>
+      <p class="hint">Toggles and sliders only work on outputs (pump, fan, buzzer, vent, LED bar, motor). Add more components on the Devices tab.</p>
+      <button class="btn primary">Add block</button></form></div>
+  <div class="card"><h2>Dashboard</h2>
+    <form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="rename"><input name="name" value="{{ dash.name }}" style="max-width:280px" aria-label="Dashboard name"><button class="btn">Rename</button></form>
+    <form method="post" data-confirm="Delete this dashboard? Feeds and data are kept." style="margin-top:12px">{{ csrf() }}<input type="hidden" name="do" value="delete"><button class="btn">Delete dashboard</button></form></div>
+</div>
+{% endif %}
+{% endblock %}

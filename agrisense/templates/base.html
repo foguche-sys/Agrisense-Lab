@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="csrf" content="{{ csrf_token() }}">
+<title>{% block title %}{{ site }}{% endblock %} · AgriSense Lab</title>
+<link rel="icon" href="{{ url_for('static', filename='img/logo.svg') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+{% from "partials/macros.html" import logo with context %}
+<header class="top">
+  <div class="top-in">
+    <a class="logo" href="{{ url_for('public.home') if g.user else url_for('public.landing') }}">{{ logo() }}<span>AgriSense Lab</span></a>
+    <nav class="nav" aria-label="Main">
+      {% set ep = request.endpoint or '' %}
+      {% if g.user %}
+        {% if any_role('owner','ops','support','finance','content','sales') %}
+          <a href="{{ url_for('staff.console') }}" class="{{ 'on' if ep.startswith('staff.') }}">Console</a>
+          {% if allowed('platform.fleet') %}<a href="{{ url_for('staff.inventory') }}" class="{{ 'on' if ep == 'staff.inventory' }}">Inventory</a>{% endif %}
+        {% endif %}
+        {% if any_role('client_admin','school_admin','it','billing','privacy') %}
+          <a href="{{ url_for('admin.overview') }}" class="{{ 'on' if ep.startswith('admin.') }}">School</a>
+        {% endif %}
+        {% if any_role('teacher','co_teacher','substitute','school_admin','client_admin') %}
+          <a href="{{ url_for('teacher.home') }}" class="{{ 'on' if ep.startswith('teacher.') }}">Teach</a>
+        {% endif %}
+        {% if 'student' in my_roles %}
+          <a href="{{ url_for('student.home') }}" class="{{ 'on' if ep in ('student.home','student.journal') }}">My class</a>
+          <a href="{{ url_for('student.tray') }}" class="{{ 'on' if ep == 'student.tray' }}">Our tray</a>
+        {% endif %}
+        {% if any_role('student','teacher','co_teacher','substitute') %}
+          <a href="{{ url_for('studio.dashboards') }}" class="{{ 'on' if ep.startswith('studio.') }}">IoT Studio</a>
+        {% endif %}
+        {% if my_roles|reject('in', ['parent','content','sales','finance','billing','substitute','owner','ops','support'])|list %}
+          <a href="{{ url_for('data.explorer') }}" class="{{ 'on' if ep.startswith('data.') }}">Data</a>
+        {% endif %}
+        {% if 'parent' in my_roles %}<a href="{{ url_for('student.parent') }}" class="{{ 'on' if ep == 'student.parent' }}">My child</a>{% endif %}
+      {% else %}
+        <a href="{{ url_for('public.landing') }}#how">How it works</a>
+        <a href="{{ url_for('public.landing') }}#lessons">Lessons</a>
+        <a href="{{ url_for('public.landing') }}#plans">Plans</a>
+      {% endif %}
+    </nav>
+    <div class="who">
+      {% if g.user %}
+        <span class="avatar" aria-hidden="true">{{ g.user.name[:1] }}</span><span class="name">{{ g.user.name }}</span>
+        <form method="post" action="{{ url_for('public.logout') }}"><input type="hidden" name="_csrf" value="{{ csrf_token() }}"><button class="btn small">Sign out</button></form>
+      {% else %}
+        <a class="btn small" href="{{ url_for('public.student_code') }}">Student sign-in</a>
+        <a class="btn small primary" href="{{ url_for('public.login') }}">Sign in</a>
+      {% endif %}
+    </div>
+  </div>
+</header>
+<main class="wrap">
+  {% with msgs = get_flashed_messages(with_categories=true) %}
+    {% for cat, m in msgs %}<div class="flash {{ cat }}" role="{{ 'alert' if cat == 'err' else 'status' }}">{{ m }}</div>{% endfor %}
+  {% endwith %}
+  {% block body %}{% endblock %}
+</main>
+<footer class="foot"><div class="wrap"><span>AgriSense Lab · by AgriSense Hub · iot.agrisensehub.com</span><span><a href="{{ url_for('public.privacy') }}">Privacy</a> · Help: {{ config.SUPPORT_EMAIL }}</span></div></footer>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

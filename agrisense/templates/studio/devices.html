@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Devices{% endblock %}
+{% from "partials/macros.html" import csrf, studio_tabs with context %}
+{% block body %}
+{{ studio_tabs(team, 'devices', teams, 'Devices') }}
+<div class="grid side">
+  <div class="card"><div class="card-head"><h2>Trainer Board components</h2>
+    {% if dev %}<span class="pill {{ 'ok' if dev.status == 'online' else 'bad' }}"><span class="dot"></span>{{ dev.serial }} · {{ dev.status }} · {{ dev.last_seen|ago }}</span>{% else %}<span class="pill warn">No Trainer Board assigned</span>{% endif %}</div>
+    <p class="muted">Tick what's plugged into your board. Each one gets a feed, and outputs can be switched from a dashboard.</p>
+    <form method="post">{{ csrf() }}
+      <div class="table-wrap"><table class="t"><tr><th></th><th>Component</th><th>Type</th><th>Feed</th><th>Where it plugs in</th></tr>
+      {% for key, c in components.items() %}<tr><td><input type="checkbox" name="components" value="{{ key }}" {{ 'checked' if key in comps }} {{ 'disabled' if not can_edit }} aria-label="{{ c[0] }}"></td>
+        <td><b>{{ c[0] }}</b></td><td><span class="pill {{ 'info' if c[1] == 'output' else 'ok' }}">{{ c[1] }}</span></td><td class="mono"><small>{{ team.slug }}.{{ key }}</small></td><td><small class="muted">{{ c[3] }}</small></td></tr>{% endfor %}</table></div>
+      {% if can_edit %}<button class="btn primary" style="margin-top:12px">Save components</button>{% endif %}</form>
+  </div>
+  <div class="stack">
+    <div class="card"><h3>Our tray on the bench</h3>{% if tray %}<p>Tray <b>{{ tray.letter }}</b> · {{ tray.label }}</p><p class="muted" style="margin:0">Its moisture, temperature, EC and pH feeds are in your Feeds list, read-only.</p>{% else %}<p class="muted">No tray assigned.</p>{% endif %}</div>
+    <div class="card"><h3>Safety on the Trainer</h3><ul style="padding-left:18px;margin:0">
+      <li>Pump: max 30 s per run, then 60 s rest.</li><li>Pump only starts if the tank level is OK.</li>
+      <li>Board stops the pump on NO FLOW (pressure under 10 kPa after 2 s) or BLOCKED (over 150 kPa).</li><li>Any adult can press STOP on the teacher page.</li></ul></div>
+  </div>
+</div>
+{% endblock %}

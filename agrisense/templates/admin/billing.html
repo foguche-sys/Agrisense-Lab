@@ -1,0 +1,20 @@
+{% extends "base.html" %}{% block title %}Billing{% endblock %}
+{% from "partials/macros.html" import admin_tabs, csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ school.name }}</div><h1>Billing</h1></div></div>
+{{ admin_tabs(school, 'admin.billing') }}
+<div class="grid side">
+  <div class="card"><h2>Quotes and invoices</h2>
+    <div class="table-wrap"><table class="t"><tr><th>Number</th><th>Type</th><th class="num">Amount</th><th>Status</th><th>Due</th><th>PO</th><th></th></tr>
+    {% for i in invoices %}<tr><td class="mono"><b>{{ i.number }}</b></td><td>{{ i.kind }}</td><td class="num">{{ i.amount_cents|money }}</td>
+      <td><span class="pill {{ 'ok' if i.status == 'paid' else ('warn' if i.status in ('sent','due') else '') }}">{{ i.status }}</span></td><td>{{ i.due_on or '—' }}</td><td class="mono">{{ i.po_number or '—' }}</td>
+      <td>{% if allowed('billing.manage', school_id=school.id) and i.status not in ('paid','void') %}<form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="po"><input type="hidden" name="invoice_id" value="{{ i.id }}"><input name="po_number" placeholder="PO number" style="width:130px"><button class="btn small">Add PO</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="7" class="empty">No quotes or invoices yet.</td></tr>{% endfor %}</table></div>
+    <p class="muted" style="margin:12px 0 0">To pay by card or ACH, reply to the invoice email; our finance team sends a secure payment link. Purchase orders: add the PO number above.</p>
+  </div>
+  <div class="card"><h2>Plan</h2>
+    {% if sub %}<div class="price">{{ sub.plan }}</div><p class="muted">{{ sub.licences }} kit licence{{ 's' if sub.licences != 1 }} · {{ sub.status }}{% if sub.renews_on %} · renews {{ sub.renews_on }}{% endif %}</p>{% else %}<p class="muted">No plan yet.</p>{% endif %}
+    <hr><h3>Upgrade</h3>{% for p in plans if p.code != 'pilot' %}<div class="row between" style="margin-bottom:8px"><span><b>{{ p.name }}</b> · {{ p.price_cents|money if p.price_cents is not none else 'by quote' }}</span><a class="btn small" href="{{ url_for('public.quote', plan=p.code) }}">Request quote</a></div>{% endfor %}
+  </div>
+</div>
+{% endblock %}

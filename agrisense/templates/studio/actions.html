@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}Actions{% endblock %}
+{% from "partials/macros.html" import csrf, studio_tabs with context %}
+{% block body %}
+{{ studio_tabs(team, 'actions', teams, 'Actions') }}
+<div class="grid side">
+  <div class="card"><h2>Our rules</h2>
+    {% for r in rules %}<div class="row between" style="padding:12px 0;border-bottom:1px solid var(--line-2)">
+      <div style="min-width:0"><b>{{ r.name }}</b> {% if not r.enabled %}<span class="pill">off</span>{% elif r.target_feed and r.target_feed.endswith('.pump') and r.effect == 'on' and not r.approved_by %}<span class="pill warn">waiting for teacher</span>{% else %}<span class="pill ok">on</span>{% endif %}
+        <br><small class="muted">{{ r.text }}</small>{% if r.last_fired_at %}<br><small class="faint">Last ran {{ r.last_fired_at|ago }}</small>{% endif %}</div>
+      {% if can_edit %}<div class="row"><form method="post">{{ csrf() }}<input type="hidden" name="do" value="toggle"><input type="hidden" name="action_id" value="{{ r.id }}"><button class="btn small">{{ 'Turn off' if r.enabled else 'Turn on' }}</button></form>
+        <form method="post" data-confirm="Delete this rule?">{{ csrf() }}<input type="hidden" name="do" value="delete"><input type="hidden" name="action_id" value="{{ r.id }}"><button class="btn small">Delete</button></form></div>{% endif %}</div>
+    {% else %}<p class="empty">No rules yet. A rule watches a feed and does something when it crosses a value.</p>{% endfor %}
+  </div>
+  {% if can_edit %}
+  <div class="card"><h2>New rule</h2>
+    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="create">
+      <div class="field"><label for="an">Name</label><input id="an" name="name" placeholder="Water when dry" required></div>
+      <div class="field"><label for="af">When feed</label><select id="af" name="feed_key">{% for f in feeds if f.kind != 'output' %}<option value="{{ f.key }}">{{ f.key }}</option>{% endfor %}</select></div>
+      <div class="fields"><div><label for="ao">is</label><select id="ao" name="op">{% for k, v in ops.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+        <div><label for="at">value</label><input id="at" name="threshold" value="15" required></div></div>
+      <div class="field" style="margin-top:12px"><label for="ae">Then</label><select id="ae" name="effect">{% for k, v in effects.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div data-show-when="effect=on|off"><div class="field"><label for="ag">Output</label><select id="ag" name="target_feed">{% for f in outputs %}<option value="{{ f.key }}">{{ f.key }}</option>{% endfor %}</select></div>
+        <div class="fields"><div data-show-when="effect=on"><label for="as">For (s, max {{ pump_max }})</label><input id="as" type="number" name="seconds" min="1" max="{{ pump_max }}" value="20"></div></div></div>
+      <div class="fields" style="margin-top:12px"><div><label for="ar">Wait before repeating (s, min {{ pump_rest }})</label><input id="ar" type="number" name="rest_seconds" min="{{ pump_rest }}" value="120"></div>
+        <div><label for="a1">Only from</label><input id="a1" type="time" name="start_hhmm" value="08:00"></div><div><label for="a2">to</label><input id="a2" type="time" name="end_hhmm" value="15:30"></div></div>
+      <p class="hint">Rules that turn the pump ON need your teacher's approval once.</p>
+      <button class="btn primary">Save rule</button></form></div>
+  {% endif %}
+</div>
+{% endblock %}

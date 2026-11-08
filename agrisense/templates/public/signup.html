@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Start a pilot{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="narrow" style="max-width:680px"><div class="card">
+  <div class="eyebrow">Free pilot · one kit, one semester</div><h1>Set up your school</h1>
+  <p class="muted">You'll be the school admin. You can invite other teachers, and your district can take over the account later.</p>
+  <form method="post">{{ csrf() }}
+    <div class="grid g2" style="gap:12px">
+      <div class="field"><label for="n">Your name</label><input id="n" name="name" value="{{ form.name or '' }}" required></div>
+      <div class="field"><label for="e">School email</label><input id="e" type="email" name="email" value="{{ form.email or '' }}" required></div>
+      <div class="field span2"><label for="p">Password</label><input id="p" type="password" name="password" minlength="10" autocomplete="new-password" required><div class="hint">At least 10 characters.</div></div>
+      <div class="field span2"><label for="s">School name</label><input id="s" name="school" value="{{ form.school or '' }}" required></div>
+      <div class="field"><label for="c">City</label><input id="c" name="city" value="{{ form.city or '' }}"></div>
+      <div class="field"><label for="st">State</label><input id="st" name="state" value="{{ form.state or '' }}" maxlength="40" required></div>
+      <div class="field"><label for="ct">Type</label><select id="ct" name="client_type">{% for v, l in [('school','Public school'),('private','Private school'),('college','College / university'),('extension','Extension / 4-H / FFA')] %}<option value="{{ v }}" {{ 'selected' if form.client_type == v }}>{{ l }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="tz">Time zone</label><select id="tz" name="timezone">{% for z in ['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'] %}<option {{ 'selected' if (form.timezone or 'America/Chicago') == z }}>{{ z }}</option>{% endfor %}</select></div>
+    </div>
+    <label class="check" style="margin:8px 0 16px"><input type="checkbox" required> I'm allowed to set this up for my school, and I'll keep student data inside school use.</label>
+    <button class="btn primary">Create school</button>
+  </form>
+</div></div>
+{% endblock %}

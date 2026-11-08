@@ -1,0 +1,26 @@
+{% extends "base.html" %}{% block title %}Data{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Data explorer</div><h1>Readings and downloads</h1>
+  <p class="muted" style="margin:0">{% if mode == 'named' %}You can include names in downloads; they're off by default.{% elif mode == 'team' %}You see your team's feeds and your class's trays.{% else %}Downloads are de-identified.{% endif %}</p></div></div>
+<form method="get" action="{{ url_for('data.download') }}" id="dl">
+<div class="grid side">
+  <div class="stack">
+    {% for key in chosen %}<div class="card"><div class="card-head"><h3 class="mono" style="font-size:15px">{{ key }}</h3></div>
+      <div class="chart" data-series="{{ url_for('data.series', feed=key, range=rng) }}" data-label="{{ key }}" data-every="60000"></div></div>
+    {% else %}<div class="card empty">Pick feeds on the right to chart and download them.</div>{% endfor %}
+  </div>
+  <div class="stack">
+    <div class="card"><h3>Time range</h3><select name="range" aria-label="Time range">{% for k in ranges %}<option value="{{ k }}" {{ 'selected' if k == rng }}>{{ {'1h':'Last hour','24h':'Last 24 hours','48h':'Last 48 hours','7d':'Last 7 days','30d':'Last 30 days','all':'Everything'}[k] }}</option>{% endfor %}</select></div>
+    <div class="card"><h3>Feeds</h3><div style="max-height:420px;overflow-y:auto">
+      {% for g, fs in groups.items() %}<details {{ 'open' if fs|selectattr('key','in',chosen)|list }}><summary class="mono" style="font-size:13px">{{ g }}</summary>
+        {% for f in fs %}<label class="check" style="margin:4px 0 4px 12px"><input type="checkbox" name="feed" value="{{ f.key }}" {{ 'checked' if f.key in chosen }}> {{ f.key.split('.')[-1] }} <small class="faint">{{ f.unit or '' }}</small></label>{% endfor %}</details>
+      {% else %}<p class="muted">No feeds yet.</p>{% endfor %}</div>
+      <button class="btn small" formaction="{{ url_for('data.explorer') }}" style="margin-top:10px">Update charts</button></div>
+    <div class="card"><h3>Download</h3>
+      {% if mode == 'named' %}<label class="check"><input type="checkbox" name="named" value="1"> Include names (recorded in the activity log)</label>{% endif %}
+      <div class="row" style="margin-top:10px"><button class="btn primary" name="fmt" value="csv">CSV</button><button class="btn" name="fmt" value="xlsx">Excel</button><button class="btn" name="fmt" value="json">JSON</button></div>
+      <p class="hint">EC, N, P and K are blank when the soil was too dry for the probe to read them.</p></div>
+  </div>
+</div>
+</form>
+{% endblock %}

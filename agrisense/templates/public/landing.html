@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% block title %}Precision agriculture lab for schools{% endblock %}
+{% block body %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">AgriSense Lab · by AgriSense Hub</div>
+    <h1>Students measure real soil, decide when to water, and check whether they were right.</h1>
+    <p class="lead">A soil bench with five trays and real probes, a Trainer Board with a pump, fan, pressure and tank sensors, and this platform: live readings, guided labs, an IoT Studio for building dashboards, and data your students can download.</p>
+    <div class="row" style="margin-top:20px">
+      <a class="btn primary" href="{{ url_for('public.signup') }}">Start a free pilot</a>
+      <a class="btn" href="{{ url_for('public.quote') }}">Get a quote for your district</a>
+      <a class="btn ghost" href="{{ url_for('public.student_code') }}">I'm a student →</a>
+    </div>
+  </div>
+  <div class="card">
+    <div class="row between"><b>Period 3 · live bench</b><span class="pill ok"><span class="dot"></span>Online</span></div>
+    <div class="grid g3" style="margin-top:14px;gap:10px">
+      {% for l, s, m, dry in [('A','Sandy',8.4,true),('B','Loam',24.1,false),('C','Clay',33.6,false)] %}
+      <div class="card flat" style="padding:12px"><small class="faint">TRAY {{ l }}</small><div><b>{{ s }}</b></div>
+        <div class="stat" style="font-size:26px">{{ m }}<span class="unit">%</span></div>
+        <div class="meter {{ 'dry' if dry }}"><span style="width:{{ (m/45*100)|round }}%"></span></div>
+        <span class="pill {{ 'warn' if dry else 'ok' }}">{{ 'Too dry' if dry else 'OK' }}</span></div>
+      {% endfor %}
+    </div>
+    <p class="muted" style="margin:12px 0 0;font-size:13px">Example only. Your bench shows your own trays.</p>
+  </div>
+</section>
+
+<section id="how" class="grid g4" style="margin-top:20px">
+  {% for t, d in [('Build', 'Wire the probe, pump and sensors on the Trainer Board. Every plug is keyed, so 12 V only goes where it should.'),
+                  ('Measure', 'Probes read moisture, temperature, EC and pH every few minutes. The gateway sends them here.'),
+                  ('Decide', 'Teams request water, and the teacher approves. In the IoT Studio, students write their own watering rules.'),
+                  ('Check', 'Charts show whether the decision worked. Journals capture claim, evidence and reasoning.')] %}
+  <div class="card"><div class="eyebrow">{{ loop.index }}</div><h3>{{ t }}</h3><p class="muted" style="margin:0">{{ d }}</p></div>
+  {% endfor %}
+</section>
+
+<section id="lessons" style="margin-top:40px">
+  <h2>Lab 1: Soil, water and smart irrigation</h2>
+  <div class="card table-wrap"><table class="t">
+    <tr><th>#</th><th>Lesson</th><th>Uses</th><th>Time</th><th>Standards</th></tr>
+    {% for l in lessons %}<tr><td class="mono">{{ l.code }}</td><td><b>{{ l.title }}</b><br><small>{{ l.summary }}</small></td>
+      <td><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data'}[l.equipment] }}</span></td><td>{{ l.duration }}</td><td><small class="mono">{{ l.standards }}</small></td></tr>{% endfor %}
+  </table></div>
+</section>
+
+<section id="plans" style="margin-top:40px">
+  <h2>Plans</h2>
+  <div class="grid g3">
+    {% for p in plans %}
+    <div class="card"><h3>{{ p.name }}</h3>
+      <div class="price">{% if p.price_cents is none %}By quote{% elif p.price_cents == 0 %}Free{% else %}{{ p.price_cents|money }}<span class="unit">/ kit / year</span>{% endif %}</div>
+      <p class="muted">{{ p.description }}</p>
+      {% if p.code == 'pilot' %}<a class="btn primary" href="{{ url_for('public.signup') }}">Start pilot</a>
+      {% else %}<a class="btn" href="{{ url_for('public.quote', plan=p.code) }}">Request a quote</a>{% endif %}
+    </div>
+    {% endfor %}
+  </div>
+  <p class="muted" style="margin-top:12px">Schools can pay by purchase order or card. Prices don't include hardware kits, which are quoted separately.</p>
+</section>
+{% endblock %}

@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}AgriSense console{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">AgriSense Hub staff</div><h1>Console</h1></div>
+  {% if allowed('platform.fleet') %}<a class="btn" href="{{ url_for('staff.inventory') }}">Device inventory</a>{% endif %}</div>
+<div class="grid g4">{% for k, l in [('inventory','In inventory'),('online','Online'),('offline','Offline'),('retired','Retired')] %}<div class="card"><div class="stat">{{ fleet[k] }}</div><div class="stat-label">{{ l }}</div></div>{% endfor %}</div>
+<div class="grid g2" style="margin-top:20px">
+  {% if clients %}<div class="card span2"><h2>Clients</h2><div class="table-wrap"><table class="t"><tr><th>Client</th><th>Type</th><th>State</th><th>Schools</th><th>Plan</th><th>Privacy agreement</th></tr>
+    {% for c in clients %}<tr><td><b>{{ c.name }}</b></td><td>{{ c.client_type }}</td><td>{{ c.state }}</td><td>{{ c.schools }}</td><td>{{ c.plan or '—' }}</td><td><span class="pill {{ 'ok' if c.dpa in ('signed','countersigned') else 'warn' }}">{{ (c.dpa or 'none').replace('_',' ') }}</span></td></tr>{% endfor %}</table></div></div>{% endif %}
+  {% if allowed('device.health') or allowed('platform.fleet') %}<div class="card"><h2>Devices not heard from in 2 h</h2>
+    <table class="t">{% for d in stale %}<tr><td class="mono">{{ d.serial }}</td><td>{{ d.kind }}</td><td>{{ d.school }}</td><td><small>{{ d.last_seen|ago }}</small></td></tr>{% else %}<tr><td class="muted">All devices reporting.</td></tr>{% endfor %}</table></div>{% endif %}
+  {% if allowed('platform.support') %}<div class="card"><h2>Support access granted by schools</h2>
+    {% for g2 in grants %}<div class="row between" style="padding:6px 0"><span><b>{{ g2.school }}</b> · ticket {{ g2.ticket }}</span><a class="btn small" href="{{ url_for('staff.school', sid=g2.school_id) }}">Open (logged)</a></div>{% else %}<p class="muted">No open grants. Schools grant access from School → Privacy.</p>{% endfor %}</div>{% endif %}
+  {% if allowed('platform.billing') or allowed('platform.quotes') %}<div class="card span2"><h2>Quotes and invoices</h2>
+    <div class="table-wrap"><table class="t"><tr><th>Number</th><th>Client</th><th class="num">Amount</th><th>Status</th><th>PO</th><th></th></tr>
+    {% for i in invoices %}<tr><td><a class="mono" href="{{ url_for('staff.invoice', iid=i.id) }}">{{ i.number }}</a></td><td>{{ i.client }}</td><td class="num">{{ i.amount_cents|money }}</td><td><span class="pill">{{ i.status }}</span></td><td class="mono">{{ i.po_number or '—' }}</td>
+      <td>{% if allowed('platform.billing') and i.status not in ('paid','void') %}<form method="post" action="{{ url_for('staff.invoices') }}" class="row">{{ csrf() }}<input type="hidden" name="invoice_id" value="{{ i.id }}"><select name="paid_via" style="width:auto"><option value="po">PO</option><option value="ach">ACH</option><option value="card">Card</option></select><button class="btn small" name="do" value="paid">Mark paid</button><button class="btn small" name="do" value="void">Void</button></form>{% endif %}</td></tr>
+    {% else %}<tr><td colspan="6" class="empty">None yet.</td></tr>{% endfor %}</table></div>
+    <details style="margin-top:12px"><summary>New quote or invoice</summary>
+      <form method="post" action="{{ url_for('staff.invoices') }}" style="margin-top:10px">{{ csrf() }}<input type="hidden" name="do" value="create">
+        <div class="fields"><div><label>Client</label><select name="org_id">{% for c in clients %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+          <div><label>Type</label><select name="kind"><option value="quote">Quote</option><option value="invoice">Invoice</option></select></div><div><label>Due</label><input type="date" name="due_on"></div></div>
+        <table class="t" style="margin-top:10px"><thead><tr><th>Item</th><th>Qty</th><th>Unit price ($)</th></tr></thead><tbody id="lines"><tr><td><input name="desc" placeholder="AgriSense Lab kit"></td><td><input name="qty" type="number" value="1" min="1"></td><td><input name="unit" type="number" step="0.01" value="0"></td></tr></tbody></table>
+        <div class="row" style="margin-top:8px"><button type="button" class="btn small" data-add-row="lines">+ Line</button><button class="btn primary">Create</button></div></form></details></div>{% endif %}
+  {% if leads %}<div class="card"><h2>Quote requests</h2><table class="t">{% for l in leads %}<tr><td><b>{{ l.school or '—' }}</b><br><small>{{ l.name }} · {{ l.email }}</small></td><td>{{ l.state }}</td><td>{{ l.plan }} · {{ l.kits }} kit(s)</td><td><small>{{ l.created_at|ago }}</small></td></tr>{% endfor %}</table></div>{% endif %}
+  {% if allowed('platform.staff') %}<div class="card"><h2>AgriSense staff</h2>
+    <table class="t">{% for s in staff %}<tr><td>{{ s.name }}<br><small>{{ s.email }}</small></td><td><span class="pill">{{ roles[s.role] }}</span></td><td><form method="post" action="{{ url_for('staff.staff_roles') }}">{{ csrf() }}<input type="hidden" name="do" value="remove"><input type="hidden" name="mid" value="{{ s.mid }}"><button class="btn small">Remove</button></form></td></tr>{% endfor %}</table>
+    <form method="post" action="{{ url_for('staff.staff_roles') }}" class="fields" style="margin-top:12px">{{ csrf() }}<div><label>Email</label><input type="email" name="email" required></div><div><label>Name</label><input name="name"></div>
+      <div><label>Role</label><select name="role">{% for k, v in roles.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div><div><button class="btn">Add</button></div></form></div>{% endif %}
+</div>
+{% endblock %}

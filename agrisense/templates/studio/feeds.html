@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Feeds{% endblock %}
+{% from "partials/macros.html" import csrf, studio_tabs with context %}
+{% block body %}
+{{ studio_tabs(team, 'feeds', teams, 'Feeds') }}
+{% set tq = {'team': team.id} if teams else {} %}
+<div class="grid side">
+  <div class="card table-wrap"><table class="t"><tr><th>Feed key</th><th>Name</th><th>Type</th><th>Last value</th><th>Updated</th></tr>
+    {% for f in feeds %}<tr><td><a class="mono" href="{{ url_for('studio.feed', key=f.key, **tq) }}">{{ f.key }}</a></td><td>{{ f.name }}</td>
+      <td><span class="pill {{ 'info' if f.kind == 'output' else ('' if f.kind == 'manual' else 'ok') }}">{{ f.kind }}</span>{% if f.tray_id %} <span class="pill">tray</span>{% endif %}</td>
+      <td class="num"><b>{{ f.last_value if f.last_value is not none else '—' }}</b> <small>{{ f.unit or '' }}</small></td><td><small>{{ f.last_at|ago }}</small></td></tr>
+    {% else %}<tr><td colspan="5" class="empty">No feeds yet. Add components on the Devices tab, or create a feed.</td></tr>{% endfor %}</table></div>
+  <div class="stack">
+    {% if can_edit %}<div class="card"><h2>New feed</h2><p class="muted">For things you measure by hand (plant height, leaf count) or send from your own code.</p>
+      <form method="post">{{ csrf() }}<div class="field"><label for="fn">Name</label><input id="fn" name="name" placeholder="Plant height" required></div>
+        <div class="field"><label for="fu">Unit</label><input id="fu" name="unit" placeholder="cm"></div><button class="btn primary">Create feed</button></form></div>{% endif %}
+    <div class="card"><h3>Feed types</h3><p class="muted" style="margin:0"><b>sensor</b>: written by your Trainer Board or the bench probes. <b>output</b>: you switch it from a dashboard, an Action or code. <b>manual</b>: you add values.</p></div>
+  </div>
+</div>
+{% endblock %}

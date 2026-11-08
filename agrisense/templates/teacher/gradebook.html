@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% block title %}Gradebook{% endblock %}
+{% from "partials/macros.html" import csrf, teach_tabs with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ cls.name }}</div><h1>Gradebook</h1></div>
+  <a class="btn" href="{{ url_for('data.explorer') }}">Class data</a></div>
+{{ teach_tabs(cls, 'grades') }}
+{% if opened %}
+<div class="card" style="margin-bottom:20px"><div class="card-head"><h2>{{ opened.team }} · Lab {{ opened.code }} {{ opened.title }}</h2><a href="{{ url_for('teacher.gradebook', cid=cls.id) }}">Close</a></div>
+  <div class="grid g3">
+    <div><h3>Claim</h3><p>{{ opened.claim or '—' }}</p></div><div><h3>Evidence</h3><p>{{ opened.evidence or '—' }}</p></div><div><h3>Reasoning</h3><p>{{ opened.reasoning or '—' }}</p></div></div>
+  {% set rows = opened.data_table|jload %}{% if rows %}<table class="t" style="max-width:640px"><tr><th>Time</th><th>Value</th><th>Note</th></tr>{% for r in rows %}<tr><td>{{ r.time }}</td><td>{{ r.value }}</td><td>{{ r.note }}</td></tr>{% endfor %}</table>{% endif %}
+  {% if allowed('grade', class_id=cls.id) %}
+  <form method="post" class="fields" style="margin-top:14px">{{ csrf() }}<input type="hidden" name="journal_id" value="{{ opened.id }}">
+    <div><label>Score / {{ opened.points }}</label><input type="number" name="score" min="0" max="{{ opened.points }}" value="{{ opened.score if opened.score is not none else '' }}"></div>
+    <div style="grid-column:span 2"><label>Feedback</label><input name="feedback" value="{{ opened.feedback or '' }}"></div>
+    <div class="row"><button class="btn primary" name="do" value="grade">Save grade</button><button class="btn" name="do" value="return">Return for changes</button></div></form>{% endif %}
+</div>{% endif %}
+<div class="card table-wrap"><table class="t"><tr><th>Team</th>{% for a in assigns %}<th>Lab {{ a.code }}</th>{% endfor %}</tr>
+{% for t in teams %}<tr><td><b>{{ t.name }}</b></td>{% for a in assigns %}{% set j = grid.get((a.id, t.id)) %}
+  <td>{% if not j %}<small class="faint">not started</small>{% else %}<a href="{{ url_for('teacher.gradebook', cid=cls.id, open=j.id) }}">
+    {% if j.status == 'graded' %}<b>{{ j.score }}</b>/{{ a.points }}{% elif j.status == 'submitted' %}<span class="pill info">to grade</span>{% elif j.status == 'returned' %}<span class="pill warn">returned</span>{% else %}<span class="pill">draft</span>{% endif %}</a>{% endif %}</td>{% endfor %}</tr>
+{% endfor %}</table>{% if not assigns %}<p class="empty">Assign a lesson to start the gradebook.</p>{% endif %}</div>
+{% endblock %}

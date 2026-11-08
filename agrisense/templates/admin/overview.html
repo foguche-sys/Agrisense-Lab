@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block title %}{{ school.name }}{% endblock %}
+{% from "partials/macros.html" import admin_tabs, school_switch with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">School admin</div><h1>{{ school.name }}</h1>
+  <small>{{ school.city ~ ', ' if school.city }}{{ school.state }} · {{ school.timezone }}{% if sub %} · {{ sub.plan }} plan ({{ sub.status }}){% endif %}</small></div>
+  {{ school_switch(school, schools, 'admin.overview') }}</div>
+{{ admin_tabs(school, 'admin.overview') }}
+<div class="grid g5">
+  {% for k, l in [('classes','Classes'),('teachers','Teachers'),('students','Students'),('devices','Devices'),('online','Online now')] %}
+  <div class="card"><div class="stat">{{ stats[k] }}</div><div class="stat-label">{{ l }}</div></div>
+  {% endfor %}
+</div>
+<div class="grid side" style="margin-top:20px">
+  <div class="stack">
+    <div class="card"><div class="card-head"><h2>Classes</h2>{% if allowed('classes.manage', school_id=school.id) %}<a class="btn small" href="{{ url_for('admin.people', school=school.id) }}#new-class">New class</a>{% endif %}</div>
+      {% if classes %}<div class="table-wrap"><table class="t"><tr><th>Class</th><th>Code</th><th>Kit</th><th>Data</th><th></th></tr>
+      {% for c in classes %}<tr><td><b>{{ c.name }}</b></td><td class="mono">{{ c.code }}</td><td>{{ c.kit_name or '—' }}</td>
+        <td>{% if c.sim_enabled %}<span class="pill sim">Simulated</span>{% else %}<span class="pill ok">Live</span>{% endif %}</td>
+        <td><a href="{{ url_for('teacher.home', **{'class': c.id}) }}">Open</a></td></tr>{% endfor %}</table></div>
+      {% else %}<p class="empty">No classes yet.</p>{% endif %}
+    </div>
+    <div class="card"><div class="card-head"><h2>Kits</h2><a class="btn small" href="{{ url_for('admin.devices', school=school.id) }}">Manage devices</a></div>
+      {% if kits %}{% for k in kits %}<div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line-2)"><b>{{ k.name }}</b><small class="muted">5 trays</small></div>{% endfor %}
+      {% else %}<p class="empty">No kits yet. Add one under Kits & devices.</p>{% endif %}</div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>Getting started</h2><div class="steps">{% for label, done, url in steps %}<a href="{{ url }}" class="{{ 'done' if done }}">{{ label }}</a>{% endfor %}</div></div>
+    <div class="card"><h2>Alerts</h2>
+      {% for a in alerts %}<div style="padding:8px 0;border-bottom:1px solid var(--line-2)"><span class="pill warn">{{ a.kind.replace('_',' ') }}</span> {{ a.message }}<br><small class="faint">{{ a.created_at|ago }}</small></div>
+      {% else %}<p class="muted" style="margin:0">No open alerts.</p>{% endfor %}</div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,24 @@
+{% extends "base.html" %}{% block title %}Lessons{% endblock %}
+{% from "partials/macros.html" import csrf, teach_tabs with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ cls.name }}</div><h1>Lessons</h1></div></div>
+{{ teach_tabs(cls, 'lessons') }}
+{% set done = assigned|map(attribute='lesson_id')|list %}
+<div class="grid g3">
+{% for l in lessons %}
+  <div class="card"><div class="row between"><span class="eyebrow">Lab {{ l.code }}</span><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data'}[l.equipment] }}</span></div>
+    <h3>{{ l.title }}</h3><p class="muted">{{ l.summary }}</p><small class="faint">{{ l.duration }} · {{ l.standards }}</small>
+    <ol style="padding-left:18px;font-size:14px">{% for p in l.parts|jload %}<li>{{ p }}</li>{% endfor %}</ol>
+    {% if l.id in done %}<span class="pill ok">Assigned</span>
+    {% elif allowed('classes.manage', class_id=cls.id) %}
+    <details><summary>Assign to {{ cls.name }}</summary>
+      <form method="post" style="margin-top:10px">{{ csrf() }}<input type="hidden" name="lesson_id" value="{{ l.id }}">
+        <div class="fields"><div><label>Starts</label><input type="date" name="starts_on"></div><div><label>Due</label><input type="date" name="due_on"></div>
+          <div><label>Data</label><select name="data_source"><option value="live">Live bench</option><option value="sim" {{ 'selected' if cls.sim_enabled }}>Simulated</option></select></div>
+          <div><label>Points</label><input type="number" name="points" value="20" min="0" max="200"></div></div>
+        <label class="check" style="margin-top:8px"><input type="checkbox" name="allow_pump" value="1" checked> Teams may request pump runs</label>
+        <button class="btn primary" style="margin-top:10px">Assign</button></form></details>{% endif %}
+  </div>
+{% endfor %}
+</div>
+{% endblock %}

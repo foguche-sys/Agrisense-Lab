@@ -1,0 +1,37 @@
+{% extends "base.html" %}{% block title %}Tray {{ tray.letter }}{% endblock %}
+{% from "partials/macros.html" import csrf, tray_tile with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ team.name }} · {{ cls.name }}</div><h1>Tray {{ tray.letter }} · {{ tray.label }}</h1></div>
+  <a class="btn" href="{{ url_for('data.explorer') }}">Download our data</a></div>
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Watering here waters the simulated tray.</div>{% endif %}
+<div class="grid side">
+  <div class="stack">
+    <div class="card"><div class="card-head"><h2>Moisture, last 48 h</h2></div>
+      <div class="chart" data-series="{{ url_for('api.tray_history', tid=tray.id, **{'class': cls.id}) }}" data-label="Moisture %" data-every="15000"></div></div>
+    <div class="grid g2">
+      <div class="card"><h3>EC (salts)</h3><div class="chart" data-series="{{ url_for('api.tray_history', tid=tray.id, metric='ec', **{'class': cls.id}) }}" data-label="EC" data-every="60000"></div></div>
+      <div class="card"><h3>Soil temperature</h3><div class="chart" data-series="{{ url_for('api.tray_history', tid=tray.id, metric='temp', **{'class': cls.id}) }}" data-label="Temperature" data-every="60000"></div></div>
+    </div>
+    <div class="card"><h2>Observations</h2>
+      <form method="post" class="fields">{{ csrf() }}<input type="hidden" name="do" value="observe">
+        <div><label for="ow">What did you see?</label><select id="ow" name="what"><option>Leaves wilting</option><option>Soil surface dry</option><option>Water pooling</option><option>Seedling came up</option><option>Plant height</option><option>Other</option></select></div>
+        <div><label for="oa">Amount</label><input id="oa" name="amount" placeholder="e.g. 4 cm"></div>
+        <div style="grid-column:span 2"><label for="on">Note</label><input id="on" name="note"></div>
+        <div><button class="btn">Save</button></div></form>
+      <table class="t" style="margin-top:12px">{% for o in obs %}<tr><td><small>{{ o.created_at|ago }}</small></td><td><b>{{ o.what }}</b> {{ o.amount }}</td><td>{{ o.note }}</td><td><small class="muted">{{ o.name }}</small></td></tr>{% endfor %}</table>
+    </div>
+  </div>
+  <div class="stack">
+    <div data-live-class="{{ cls.id }}">{{ tray_tile(tray, reading) }}</div>
+    <div class="card"><h2>Ask for water</h2>
+      <p class="muted">Your teacher approves every run. The pump adds about 0.1 % moisture per second on this bench.</p>
+      <form method="post">{{ csrf() }}<input type="hidden" name="do" value="water">
+        <div class="field"><label for="ws">Seconds (1–{{ limit }})</label><input id="ws" type="number" name="seconds" min="1" max="{{ limit }}" value="30" required></div>
+        <div class="field"><label for="wr">Why? Use your data.</label><input id="wr" name="reason" maxlength="200" placeholder="Moisture is 12 %, below our 15 % target" required></div>
+        <button class="btn primary" {{ 'disabled' if not cls.pump_requests_allowed }}>Send request</button>
+        {% if not cls.pump_requests_allowed %}<p class="hint">Requests are paused by your teacher.</p>{% endif %}</form>
+      {% if reqs %}<table class="t" style="margin-top:12px">{% for r in reqs %}<tr><td>{{ r.seconds }} s</td><td><span class="pill {{ 'ok' if r.status in ('approved','done') else ('warn' if r.status == 'pending' else '') }}">{{ r.status }}</span></td><td><small>{{ r.created_at|ago }}</small></td></tr>{% endfor %}</table>{% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

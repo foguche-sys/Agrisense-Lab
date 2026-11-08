@@ -1,0 +1,6 @@
+{% extends "base.html" %}{% block title %}My child{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Parent / guardian</div><h1>Your child's lab work</h1></div></div>
+{% for k in kids %}<div class="card" style="margin-bottom:16px"><h2>{{ k.child.name }} · {{ k.cls.name }}{% if k.team %} · {{ k.team.name }}{% endif %}</h2>
+  <table class="t"><tr><th>Lab</th><th>Status</th><th>Score</th></tr>{% for w in k.work %}<tr><td>{{ w.code }} {{ w.title }}</td><td>{{ w.status or 'not started' }}</td><td>{{ (w.score ~ '/' ~ w.points) if w.score is not none else '—' }}</td></tr>{% else %}<tr><td colspan="3" class="empty">No lessons yet.</td></tr>{% endfor %}</table></div>{% endfor %}
+{% endblock %}

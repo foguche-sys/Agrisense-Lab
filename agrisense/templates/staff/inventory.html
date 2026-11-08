@@ -1,0 +1,16 @@
+{% extends "base.html" %}{% block title %}Inventory{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">AgriSense Hub staff</div><h1>Device inventory</h1></div></div>
+<div class="grid side">
+  <div class="card table-wrap"><table class="t"><tr><th>Serial</th><th>Type</th><th>Status</th><th>School</th><th>Claim code</th><th>Made</th></tr>
+    {% for d in devices %}<tr><td class="mono"><b>{{ d.serial }}</b></td><td>{{ d.kind }}</td><td><span class="pill">{{ d.status }}</span></td><td>{{ d.school or '—' }}</td><td class="mono">{{ d.claim_code if not d.school else 'claimed' }}</td><td><small>{{ d.created_at[:10] }}</small></td></tr>
+    {% else %}<tr><td colspan="6" class="empty">No devices yet.</td></tr>{% endfor %}</table></div>
+  <div class="stack">
+    <div class="card"><h2>Make devices</h2><p class="muted">Creates serials, claim codes and device keys. Keys are shown once: flash each into that board's secrets.h and print the serial and claim code on its QR label.</p>
+      <form method="post">{{ csrf() }}<div class="fields"><div><label>Type</label><select name="kind">{% for k, p in kinds.items() %}<option value="{{ k }}">{{ k }} ({{ p }}-…)</option>{% endfor %}</select></div><div><label>How many</label><input type="number" name="count" value="5" min="1" max="50"></div></div>
+        <div class="row" style="margin-top:10px"><button class="btn primary">Make</button><button class="btn" name="fmt" value="csv">Make and download CSV</button></div></form></div>
+    {% if made %}<div class="card"><h2>New devices: copy the keys now</h2><table class="t">{% for m in made %}<tr><td class="mono">{{ m.serial }}</td><td class="mono">{{ m.claim_code }}</td><td class="mono"><small>{{ m.key }}</small></td></tr>{% endfor %}</table></div>{% endif %}
+  </div>
+</div>
+{% endblock %}

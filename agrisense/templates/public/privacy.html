@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}Privacy{% endblock %}
+{% block body %}
+<div class="narrow" style="max-width:760px"><div class="card stack">
+<h1>Privacy at AgriSense Lab</h1>
+<p><b>What we keep about students.</b> A first name with last initial, the class and team, a picture password (stored only as a one-way hash), lab journals, observations and the soil readings their team works with. No student email, birthday or address is needed.</p>
+<p><b>Who sees it.</b> The student's own team, their teachers, and their school's admins. Parents see only their own child. Researchers and observers see de-identified data only. AgriSense Hub support sees a school only when the school grants time-limited access for a ticket, and every view is logged.</p>
+<p><b>Downloads.</b> Exports are de-identified by default. Named exports are limited to teachers and school admins and are recorded in the school's activity log.</p>
+<p><b>Retention.</b> Each school sets how long readings are kept (365 days by default). A school can ask for all its data to be exported or deleted.</p>
+<p><b>Agreements.</b> We sign a student data privacy agreement with each district or school (in the School → Privacy page) before rostering students.</p>
+<p class="muted">Questions: {{ config.SUPPORT_EMAIL }}</p>
+</div></div>
+{% endblock %}

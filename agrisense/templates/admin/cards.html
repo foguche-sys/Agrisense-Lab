@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Sign-in cards{% endblock %}
+{% from "partials/macros.html" import pic with context %}
+{% block body %}
+<div class="page-head no-print"><div><div class="eyebrow">{{ cls.name }}</div><h1>Sign-in cards</h1><p class="muted">Print these now. The pictures aren't shown again; you can reset them from Teams & students.</p></div>
+  <button class="btn primary" data-print>Print cards</button></div>
+<div class="cards-print">{% for c in cards %}<div class="login-card"><div class="row between"><b>{{ c.name }}</b><small>{{ c.team }}</small></div>
+  <small class="muted">Class code <b class="mono">{{ cls.code }}</b> · go to iot.agrisensehub.com → Student sign-in</small>
+  <div class="row" style="margin-top:8px">{% for p in c.pics %}<div style="width:64px;text-align:center"><div style="width:56px;height:56px;margin:auto">{{ pic(p) }}</div><small>{{ p }}</small></div>{% endfor %}</div></div>
+{% else %}<p class="empty">No names were added.</p>{% endfor %}</div>
+{% endblock %}

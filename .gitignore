@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+instance/
+.env
+*.db
+*.db-wal
+*.db-shm
+.pytest_cache/
+firmware/**/secrets.h
+screenshots/tmp/

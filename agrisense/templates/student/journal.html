@@ -1,0 +1,22 @@
+{% extends "base.html" %}{% block title %}Lab {{ a.code }}{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Lab {{ a.code }} · {{ team.name }}</div><h1>{{ a.title }}</h1><p class="muted" style="margin:0">{{ a.summary }}</p></div>
+  <span class="pill {{ 'ok' if j.status == 'graded' else ('info' if j.status == 'submitted' else ('warn' if j.status == 'returned' else '')) }}">{{ j.status }}{% if j.score is not none %} · {{ j.score }}/{{ a.points }}{% endif %}</span></div>
+{% if j.feedback %}<div class="banner warn"><b>Teacher feedback</b> {{ j.feedback }}</div>{% endif %}
+<div class="grid side">
+<form method="post" class="card stack">{{ csrf() }}
+  <div class="field"><label for="cl">Claim: what did you find out?</label><textarea id="cl" name="claim">{{ j.claim or '' }}</textarea></div>
+  <div class="field"><label for="ev">Evidence: which data shows it?</label><textarea id="ev" name="evidence">{{ j.evidence or '' }}</textarea></div>
+  <div class="field"><label for="re">Reasoning: why does the evidence support your claim?</label><textarea id="re" name="reasoning">{{ j.reasoning or '' }}</textarea></div>
+  <div><label>Data table</label><table class="t"><thead><tr><th>Time</th><th>Value</th><th>Note</th></tr></thead><tbody id="rows">
+    {% for r in (rows or [{}]) %}<tr><td><input name="row_time" value="{{ r.time or '' }}" placeholder="Mon 10:15"></td><td><input name="row_value" value="{{ r.value or '' }}" placeholder="18.4 %"></td><td><input name="row_note" value="{{ r.note or '' }}"></td></tr>{% endfor %}
+  </tbody></table><button type="button" class="btn small" data-add-row="rows" style="margin-top:8px">+ Row</button></div>
+  {% if j.status != 'graded' %}<div class="row"><button class="btn" name="do" value="save">Save draft</button><button class="btn primary" name="do" value="submit">Submit to teacher</button></div>{% endif %}
+</form>
+<div class="stack">
+  <div class="card"><h3>Steps</h3><ol style="padding-left:18px">{% for p in parts %}<li>{{ p }}</li>{% endfor %}</ol></div>
+  {% if tray %}<div class="card"><h3>Tray {{ tray.letter }} moisture</h3><div class="chart" data-series="{{ url_for('api.tray_history', tid=tray.id, **{'class': cls.id}) }}" data-label="Moisture"></div></div>{% endif %}
+</div>
+</div>
+{% endblock %}

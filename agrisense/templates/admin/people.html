@@ -1,0 +1,46 @@
+{% extends "base.html" %}{% block title %}People & classes{% endblock %}
+{% from "partials/macros.html" import admin_tabs, csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ school.name }}</div><h1>People & classes</h1></div></div>
+{{ admin_tabs(school, 'admin.people') }}
+<div class="grid g2">
+  <div class="card" id="new-class"><h2>New class</h2>
+    <form method="post" action="{{ url_for('admin.add_class', school=school.id) }}">{{ csrf() }}
+      <div class="fields">
+        <div><label for="cn">Class name</label><input id="cn" name="name" placeholder="Period 3 Ag Science" required></div>
+        <div><label for="ck">Kit</label><select id="ck" name="kit_id"><option value="">No kit yet (simulated data)</option>{% for k in kits %}<option value="{{ k.id }}">{{ k.name }}</option>{% endfor %}</select></div>
+        <div><label for="ct">Teams</label><input id="ct" type="number" name="teams" min="1" max="10" value="5"></div>
+        <div><label for="te">Teacher's email</label><input id="te" type="email" name="teacher_email" placeholder="optional"></div>
+      </div>
+      <button class="btn primary" style="margin-top:12px">Create class</button>
+    </form></div>
+  <div class="card"><h2>Add students</h2>
+    <form method="post" action="{{ url_for('admin.add_students', school=school.id) }}">{{ csrf() }}
+      <div class="field"><label for="sc">Class</label><select id="sc" name="class_id" required>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }} ({{ c.code }})</option>{% endfor %}</select></div>
+      <div class="field"><label for="sn">Names, one per line</label><textarea id="sn" name="names" placeholder="Maya Lopez&#10;Jordan Kim"></textarea>
+        <div class="hint">We keep only the first name and last initial. Each student gets a two-picture password, and you print the sign-in cards on the next page.</div></div>
+      <button class="btn primary" {{ 'disabled' if not classes }}>Add and print cards</button>
+    </form></div>
+</div>
+
+<div class="card" style="margin-top:20px"><div class="card-head"><h2>Adults and roles</h2></div>
+  <form method="post" action="{{ url_for('admin.add_staff', school=school.id) }}" class="fields" style="margin-bottom:16px">{{ csrf() }}
+    <div><label for="an">Name</label><input id="an" name="name" required></div>
+    <div><label for="ae">Email</label><input id="ae" type="email" name="email" required></div>
+    <div><label for="ar">Role</label><select id="ar" name="role">{% for r in assignable %}<option value="{{ r }}">{{ ROLES[r] }}</option>{% endfor %}</select></div>
+    <div data-show-when="role=teacher|co_teacher|substitute|observer"><label for="acl">Class</label><select id="acl" name="class_id"><option value="">—</option>{% for c in classes %}<option value="{{ c.id }}">{{ c.name }}</option>{% endfor %}</select></div>
+    <div data-show-when="role=substitute|observer"><label for="ad">Access for (days)</label><input id="ad" type="number" name="days" value="7" min="1" max="365"></div>
+    <div><button class="btn primary">Add person</button></div>
+  </form>
+  <div class="table-wrap"><table class="t"><tr><th>Name</th><th>Email</th><th>Role</th><th>Class</th><th>Last sign-in</th><th></th></tr>
+  {% for p in staff %}<tr><td><b>{{ p.name }}</b></td><td>{{ p.email or '—' }}</td><td><span class="pill">{{ ROLES.get(p.role, p.role) }}</span>{% if p.expires_at %} <small class="muted">until {{ p.expires_at[:10] }}</small>{% endif %}</td>
+    <td>{{ p.class_name or '—' }}</td><td><small>{{ p.last_login|ago }}</small></td>
+    <td>{% if p.id != g.user.id %}<form class="inline" method="post" action="{{ url_for('admin.remove_membership', mid=p.mid, school=school.id) }}" data-confirm="Remove this role?">{{ csrf() }}<button class="btn small">Remove role</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">No adults yet.</td></tr>{% endfor %}</table></div>
+</div>
+
+<div class="card" style="margin-top:20px"><h2>Students ({{ students|length }})</h2>
+  <div class="table-wrap"><table class="t"><tr><th>Name</th><th>Class</th><th>Team</th><th>Last sign-in</th></tr>
+  {% for s in students %}<tr><td>{{ s.name }}</td><td>{{ s.class_name }}</td><td>{{ s.team or '—' }}</td><td><small>{{ s.last_login|ago }}</small></td></tr>
+  {% else %}<tr><td colspan="4" class="empty">No students yet.</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}My class{% endblock %}
+{% from "partials/macros.html" import tray_tile with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">{{ cls.name }}</div><h1>Hi {{ g.user.name.split(' ')[0] }}</h1>
+  <p class="muted" style="margin:0">{{ team.name }}: {{ mates|map(attribute='name')|join(', ') }}</p></div>
+  <div class="row"><a class="btn" href="{{ url_for('studio.dashboards') }}">IoT Studio</a><a class="btn primary" href="{{ url_for('student.tray') }}">Open our tray</a></div></div>
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Your teacher is using simulated readings today.</div>{% endif %}
+<div class="grid side">
+  <div class="card"><h2>Our work</h2>
+    {% for a in assigns %}<div class="row between" style="padding:12px 0;border-bottom:1px solid var(--line-2)">
+      <div><span class="eyebrow">Lab {{ a.code }}</span><div><b>{{ a.title }}</b></div><small class="muted">{{ a.summary }}{% if a.due_on %} · due {{ a.due_on }}{% endif %}</small></div>
+      <div class="row">{% if a.jstatus == 'graded' %}<span class="pill ok">{{ a.score }}/{{ a.points }}</span>{% elif a.jstatus == 'submitted' %}<span class="pill info">Submitted</span>{% elif a.jstatus == 'returned' %}<span class="pill warn">Returned</span>{% elif a.jstatus %}<span class="pill">Draft</span>{% endif %}
+        <a class="btn small" href="{{ url_for('student.journal', aid=a.id) }}">{{ 'Open' if a.jstatus else 'Start' }}</a></div></div>
+    {% else %}<p class="empty">No lessons assigned yet.</p>{% endfor %}
+  </div>
+  <div>{% if tray %}{{ tray_tile(tray, reading) }}{% else %}<div class="card empty">Your team doesn't have a tray yet.</div>{% endif %}</div>
+</div>
+{% endblock %}
