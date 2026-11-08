@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% block title %}Sign-in cards{% endblock %}
 {% from "partials/macros.html" import pic with context %}
 {% block body %}
-<div class="page-head no-print"><div><div class="eyebrow">{{ cls.name }}</div><h1>Sign-in cards</h1><p class="muted">Print these now. The pictures aren't shown again; you can reset them from Teams & students.</p></div>
+<div class="page-head no-print"><div><div class="eyebrow">{{ cls.name }}</div><h1>Sign-in cards</h1><p class="muted">{% if reprint %}These are new pictures, so the old cards no longer work. Print these now and hand them out.{% else %}Print these now. The pictures aren't shown again; you can print new cards later from Teams & students.{% endif %}</p></div>
   <button class="btn primary" data-print>Print cards</button></div>
 <div class="cards-print">{% for c in cards %}<div class="login-card"><div class="row between"><b>{{ c.name }}</b><small>{{ c.team }}</small></div>
   <small class="muted">Class code <b class="mono">{{ cls.code }}</b> · go to iot.agrisensehub.com → Student sign-in</small>

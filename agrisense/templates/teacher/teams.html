@@ -2,7 +2,9 @@
 {% from "partials/macros.html" import csrf, teach_tabs with context %}
 {% block body %}
 <div class="page-head"><div><div class="eyebrow">{{ cls.name }} · class code <span class="mono">{{ cls.code }}</span></div><h1>Teams & students</h1></div>
-  {% if allowed('people.manage', class_id=cls.id) %}<a class="btn" href="{{ url_for('admin.people', school=cls.school_id) }}">Add students</a>{% endif %}</div>
+  {% if allowed('people.manage', class_id=cls.id) %}<div class="row">
+    <form method="post" data-confirm="Give every student in {{ cls.name }} new pictures and print new cards? Their old pictures stop working right away.">{{ csrf() }}<input type="hidden" name="do" value="reset_all"><button class="btn">Print new cards for the class</button></form>
+    <a class="btn" href="{{ url_for('admin.people', school=cls.school_id) }}">Add students</a></div>{% endif %}</div>
 {{ teach_tabs(cls, 'teams') }}
 {% set manage = allowed('people.manage', class_id=cls.id) %}
 <div class="grid g3">
@@ -15,7 +17,7 @@
     <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line-2)"><span>{{ s.name }} <small class="faint">{{ s.last_login|ago }}</small></span>
       {% if manage %}<details><summary class="btn small">Manage</summary><div class="stack" style="padding:8px 0">
         <form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="move"><input type="hidden" name="user_id" value="{{ s.id }}"><select name="team_id" style="width:auto">{% for t2 in teams %}<option value="{{ t2.id }}" {{ 'selected' if t2.id == t.id }}>{{ t2.name }}</option>{% endfor %}</select><button class="btn small">Move</button></form>
-        <form method="post">{{ csrf() }}<input type="hidden" name="do" value="reset_pics"><input type="hidden" name="user_id" value="{{ s.id }}"><button class="btn small">New pictures</button></form>
+        <form method="post">{{ csrf() }}<input type="hidden" name="do" value="reset_pics"><input type="hidden" name="user_id" value="{{ s.id }}"><button class="btn small">New pictures + card</button></form>
         <form method="post" data-confirm="Remove {{ s.name }} from this class?">{{ csrf() }}<input type="hidden" name="do" value="remove"><input type="hidden" name="user_id" value="{{ s.id }}"><button class="btn small">Remove</button></form></div></details>{% endif %}</div>
     {% else %}<p class="muted">No students yet.</p>{% endfor %}
   </div>

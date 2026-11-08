@@ -320,3 +320,13 @@ def test_school_admin_deletes_teacher_account(client, db):
     co = db.val("SELECT id FROM users WHERE email = 'coteacher@demo.agrisensehub.com'")
     assert client.post(f"/admin/user/{co}/delete?school={i['school']}", data={"_csrf": tok}).status_code == 403
     assert db.val("SELECT is_active FROM users WHERE id = ?", co) == 1
+
+
+def test_reprint_cards_gives_new_pictures(client, db):
+    i = ids(db)
+    tok = login(client, "teacher")
+    html = client.post(f"/teach/{i['cls']}/teams", data={"_csrf": tok, "do": "reset_all"}).get_data(as_text=True)
+    assert html.count('class="login-card"') == 10 and "old cards no longer work" in html
+    uid = db.val("SELECT id FROM users WHERE name = 'Maya L.'")
+    html = client.post(f"/teach/{i['cls']}/teams", data={"_csrf": tok, "do": "reset_pics", "user_id": uid}).get_data(as_text=True)
+    assert html.count('class="login-card"') == 1 and "Maya L." in html

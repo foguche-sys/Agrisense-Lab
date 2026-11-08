@@ -201,13 +201,20 @@ def teams(cid):
             if t:
                 d.update("teams", t["id"], tray_id=tray["id"] if tray else None)
                 ok("Tray assigned.")
-        elif act == "reset_pics":
-            m = d.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", f.get("user_id"), cid)
-            if m:
+        elif act in ("reset_pics", "reset_all"):
+            # Pictures are stored only as a one-way hash, so a lost card can't be reprinted as-is:
+            # we give new pictures and print fresh cards. The old pictures stop working.
+            sql = ("SELECT m.user_id, m.team_id, u.name FROM memberships m JOIN users u ON u.id = m.user_id "
+                   "WHERE m.class_id = ? AND m.role = 'student' AND u.is_active = 1")
+            rows = d.q(sql + " ORDER BY u.name", cid) if act == "reset_all" else d.q(sql + " AND m.user_id = ?", cid, f.get("user_id"))
+            teams = {t["id"]: t["name"] for t in d.q("SELECT id, name FROM teams WHERE class_id = ?", cid)}
+            cards = []
+            for r in rows:
                 pics = secrets.SystemRandom().sample(auth.PICTURES, 2)
-                d.update("users", m["user_id"], picture_hash=auth.picture_hash(pics, m["user_id"]))
-                name = d.val("SELECT name FROM users WHERE id = ?", m["user_id"])
-                ok(f"New pictures for {name}: {pics[0]} + {pics[1]}")
+                d.update("users", r["user_id"], picture_hash=auth.picture_hash(pics, r["user_id"]))
+                cards.append({"name": r["name"], "pics": pics, "team": teams.get(r["team_id"], "")})
+            log(d, "students.new_pictures", f"{len(cards)} in {cls['name']}", school_id=cls["school_id"])
+            return render_template("admin/cards.html", cls=cls, cards=cards, reprint=True)
         elif act == "remove":
             m = d.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", f.get("user_id"), cid)
             if m:
