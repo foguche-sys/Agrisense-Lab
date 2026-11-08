@@ -1,15 +1,17 @@
 # One-button deploy on Render: Dashboard → New → Blueprint → pick this repo.
 # Render asks for the values marked sync: false (your owner email and password), then builds
-# the database and the website together. Choose plans on that screen; free plans sleep or expire.
+# the database and the website together. Both start on free plans; upgrade them in the dashboard.
 databases:
   - name: agrisense-db
     databaseName: agrisense
     user: agrisense
+    plan: free          # for trying it out; change to basic-256mb before schools rely on it (free databases expire)
 
 services:
   - type: web
     name: agrisense-lab
     runtime: python
+    plan: free          # sleeps when idle; change to starter for a pilot
     buildCommand: pip install -r requirements.txt
     startCommand: flask --app wsgi init-db && gunicorn -w 2 -k gthread --threads 4 -b 0.0.0.0:$PORT --access-logfile - wsgi:app
     healthCheckPath: /
