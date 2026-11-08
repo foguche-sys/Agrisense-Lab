@@ -78,6 +78,12 @@ class Database:
 _PH = re.compile(r"\?")
 
 
+def pg_sql(sql):
+    """Turn our "?" SQL into psycopg's format. A literal % (as in LIKE '%.pump') must be doubled,
+    or psycopg reads it as the start of a placeholder and the query fails."""
+    return _PH.sub("%s", sql.replace("%", "%%"))
+
+
 class Conn:
     """Thin wrapper used through get_db(): q(), one(), run(), commit()."""
 
@@ -87,7 +93,7 @@ class Conn:
         self.trace = trace
 
     def _sql(self, sql):
-        return _PH.sub("%s", sql) if self.database.pg else sql
+        return pg_sql(sql) if self.database.pg else sql
 
     def _exec(self, sql, params=()):
         if self.trace is not None:

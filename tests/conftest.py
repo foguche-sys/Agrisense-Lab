@@ -75,6 +75,10 @@ def _sql_trace(request):
     TRACE.clear()
     yield
     import os
+    import re as _re
+    from agrisense.db import pg_sql
+    for sql, params in TRACE:      # what psycopg will see: only %s placeholders and %% literals
+        assert not _re.search(r"%(?!s|%)", pg_sql(sql).replace("%%", "")), sql
     out = os.environ.get("PG_TRACE_DIR")
     if not out:
         return
