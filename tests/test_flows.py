@@ -293,3 +293,30 @@ def test_observer_gets_deidentified_only(client, db):
     key = db.val("SELECT key FROM feeds WHERE key LIKE '%.tray-a.moisture'")
     r = client.get(f"/data/download?feed={key}&fmt=json&named=1")
     assert r.json["names"] == "removed"
+
+
+def test_school_admin_deletes_teacher_account(client, db):
+    i = ids(db)
+    tok = login(client, "admin")
+    cid = i["cls"]
+    client.post(f"/admin/staff?school={i['school']}", data={"_csrf": tok, "name": "Temp T", "email": "temp@x.org", "role": "teacher", "class_id": cid})
+    uid = db.val("SELECT id FROM users WHERE email = 'temp@x.org'")
+    r = client.post(f"/admin/user/{uid}/delete?school={i['school']}", data={"_csrf": tok}, follow_redirects=True)
+    assert "can be added again" in r.get_data(as_text=True)
+    assert db.val("SELECT COUNT(*) AS n FROM memberships WHERE user_id = ?", uid) == 0
+    assert db.val("SELECT email FROM users WHERE id = ?", uid) is None
+    # the email is free again
+    client.post(f"/admin/staff?school={i['school']}", data={"_csrf": tok, "name": "Temp T", "email": "temp@x.org", "role": "teacher", "class_id": cid})
+    assert db.val("SELECT COUNT(*) AS n FROM users WHERE email = 'temp@x.org'") == 1
+    # can't delete self, a district admin, or someone with roles elsewhere
+    me = db.val("SELECT id FROM users WHERE email = 'admin@demo.agrisensehub.com'")
+    assert "your own account" in client.post(f"/admin/user/{me}/delete?school={i['school']}", data={"_csrf": tok}, follow_redirects=True).get_data(as_text=True)
+    dist = db.val("SELECT id FROM users WHERE email = 'district@demo.agrisensehub.com'")
+    client.post(f"/admin/user/{dist}/delete?school={i['school']}", data={"_csrf": tok})
+    assert db.val("SELECT is_active FROM users WHERE id = ?", dist) == 1
+    # a teacher can't use it
+    client.post("/logout", data={"_csrf": tok})
+    tok = login(client, "teacher")
+    co = db.val("SELECT id FROM users WHERE email = 'coteacher@demo.agrisensehub.com'")
+    assert client.post(f"/admin/user/{co}/delete?school={i['school']}", data={"_csrf": tok}).status_code == 403
+    assert db.val("SELECT is_active FROM users WHERE id = ?", co) == 1

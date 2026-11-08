@@ -35,7 +35,8 @@
   <div class="table-wrap"><table class="t"><tr><th>Name</th><th>Email</th><th>Role</th><th>Class</th><th>Last sign-in</th><th></th></tr>
   {% for p in staff %}<tr><td><b>{{ p.name }}</b></td><td>{{ p.email or '—' }}</td><td><span class="pill">{{ ROLES.get(p.role, p.role) }}</span>{% if p.expires_at %} <small class="muted">until {{ p.expires_at[:10] }}</small>{% endif %}</td>
     <td>{{ p.class_name or '—' }}</td><td><small>{{ p.last_login|ago }}</small></td>
-    <td>{% if p.id != g.user.id %}<form class="inline" method="post" action="{{ url_for('admin.remove_membership', mid=p.mid, school=school.id) }}" data-confirm="Remove this role?">{{ csrf() }}<button class="btn small">Remove role</button></form>{% endif %}</td></tr>
+    <td>{% if p.id != g.user.id %}<form class="inline" method="post" action="{{ url_for('admin.remove_membership', mid=p.mid, school=school.id) }}" data-confirm="Remove this role?">{{ csrf() }}<button class="btn small">Remove role</button></form>
+      {% if p.email %}<form class="inline" method="post" action="{{ url_for('admin.delete_user', uid=p.id, school=school.id) }}" data-confirm="Delete {{ p.name }}'s account? They can't sign in again and every role they have here is removed. This can't be undone.">{{ csrf() }}<button class="btn small danger">Delete account</button></form>{% endif %}{% endif %}</td></tr>
   {% else %}<tr><td colspan="6" class="empty">No adults yet.</td></tr>{% endfor %}</table></div>
 </div>
 

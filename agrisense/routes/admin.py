@@ -167,6 +167,42 @@ def remove_membership(mid):
     return redirect(url_for("admin.people", school=school["id"]))
 
 
+@bp.route("/user/<uid>/delete", methods=["POST"])
+def delete_user(uid):
+    """Delete an adult's account: remove every role, sign-in and email (the email can be used again).
+
+    Allowed only when all of that person's roles are in this school and are roles the admin may hand out,
+    so a school admin can't delete district admins, other schools' staff or AgriSense staff.
+    Their name in past records (approvals, grades, activity log) becomes "Deleted user"."""
+    school, _ = pick_school()
+    need("people.manage", school_id=school["id"])
+    d = db()
+    back = redirect(url_for("admin.people", school=school["id"]))
+    u = d.one("SELECT * FROM users WHERE id = ?", uid)
+    if not u or not u["email"]:
+        abort(404)
+    if uid == g.user["id"]:
+        err("You can't delete your own account.")
+        return back
+    mine = {r for m in g.memberships for r in ASSIGNABLE_BY.get(m["role"], set())}
+    theirs = d.q("SELECT * FROM memberships WHERE user_id = ?", uid)
+    if not theirs:
+        abort(404)
+    for m in theirs:
+        m_school = m["school_id"] or (d.val("SELECT school_id FROM classes WHERE id = ?", m["class_id"]) if m["class_id"] else None)
+        if m_school != school["id"]:
+            err(f"{u['name']} also has a role outside {school['name']}, so only their district admin or AgriSense support can delete the account. You can still remove their roles here.")
+            return back
+        if m["role"] not in mine:
+            err(f"You can't delete a {ROLES.get(m['role'], m['role'])} account.")
+            return back
+    d.run("DELETE FROM memberships WHERE user_id = ?", uid)
+    d.update("users", uid, email=None, name="Deleted user", password_hash=None, picture_hash=None, is_active=0)
+    log(d, "user.delete", f"{u['email']} ({', '.join(sorted({m['role'] for m in theirs}))})", school_id=school["id"])
+    ok(f"{u['name']}'s account was deleted. The email {u['email']} can be added again.")
+    return back
+
+
 # ---------------- kits and devices ----------------
 
 @bp.route("/devices")
