@@ -39,7 +39,8 @@ LESSONS = [
 ]
 
 PLANS = [   # website licences (Nov 2026). Hardware kits are on /kits (services/kits.py).
-    ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9, the AI Lab (2.1–2.5) and the Field Studio."),
+    ("pilot", "Pilot", 0, "Free website licence for one school for one semester: all 14 lessons, the AI Lab and the Field Studio. "
+                          "The kit is bought separately at pilot pricing (see Kits and pricing)."),
     ("virtual", "Virtual", 30000, "No hardware: every lesson in simulation mode, the AI Lab and the Field Studio, for one school."),
     ("school", "School", 30000, "Per kit per year, with a Starter kit: all lessons on real hardware, unlimited classes, data exports, support."),
     ("district", "District", None, "Several schools: priced by quote, purchase order, privacy agreement, rostering."),
