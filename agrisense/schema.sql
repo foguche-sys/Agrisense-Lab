@@ -294,6 +294,14 @@ CREATE TABLE IF NOT EXISTS leads (
   created_at TEXT NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS pilot_signups (     -- teachers asking to join the pilot (adults only; contact details, no student data)
+  id TEXT PRIMARY KEY,
+  name TEXT NOT NULL, email TEXT NOT NULL, phone TEXT,
+  school TEXT NOT NULL, district TEXT, county TEXT, role TEXT,
+  students INTEGER, interest TEXT, start_term TEXT, site TEXT, notes TEXT,
+  created_at TEXT NOT NULL
+);
+
 CREATE TABLE IF NOT EXISTS privacy_agreements (
   id TEXT PRIMARY KEY,
   org_id TEXT NOT NULL REFERENCES orgs(id),

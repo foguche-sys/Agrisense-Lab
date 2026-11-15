@@ -1,4 +1,4 @@
-"""Public site and sign-in: landing, plans, quote request, staff sign-in, student picture sign-in, school sign-up."""
+"""Public site and sign-in: landing, plans, quote request, pilot sign-up, staff sign-in, student picture sign-in, school sign-up."""
 from flask import Blueprint, g, redirect, render_template, request, session, url_for
 
 from .. import auth
@@ -39,6 +39,47 @@ def quote():
                     kits=kits, created_at=now())
         return render_template("public/quote.html", sent=True, form={})
     return render_template("public/quote.html", form={"plan": request.args.get("plan", "school")})
+
+
+PILOT_ROLES = ["Agriculture teacher", "Science teacher", "Computer science teacher", "CTE director", "School or district leader", "Other"]
+PILOT_INTEREST = ["Starter", "Starter + Field add-on", "Virtual only", "Not sure yet"]
+PILOT_TERMS = ["Fall 2027", "Spring 2028", "Later"]
+PILOT_SITES = ["Greenhouse", "School garden or FFA plot", "Classroom only"]
+
+
+@bp.route("/pilot", methods=["GET", "POST"])
+def pilot():
+    """Teacher sign-up for the fall 2027 pilot. Saves contact details only; staff see them in the console."""
+    if request.method == "POST":
+        f = request.form
+        if f.get("website"):                     # hidden field: only bots fill it in
+            return render_template("public/pilot.html", sent=True, form={}, **_pilot_lists())
+        ip = "pilot:" + (request.remote_addr or "?")
+        if auth.throttle(ip, limit=5, window=3600):
+            err("Too many sign-ups from this network. Try again in an hour, or email us.")
+            return render_template("public/pilot.html", form=f, **_pilot_lists()), 429
+        email = (f.get("email") or "").strip().lower()
+        if not f.get("name", "").strip() or not f.get("school", "").strip() or "@" not in email or "." not in email.split("@")[-1]:
+            err("Please fill in your name, your school and a working email.")
+            return render_template("public/pilot.html", form=f, **_pilot_lists()), 400
+        try:
+            students = max(0, min(5000, int(f.get("students") or 0))) or None
+        except ValueError:
+            students = None
+        pick = lambda key, allowed: f.get(key) if f.get(key) in allowed else None
+        db().insert("pilot_signups", id=new_id("pl"), name=f["name"].strip()[:120], email=email[:200],
+                    phone=(f.get("phone") or "").strip()[:40], school=f["school"].strip()[:200],
+                    district=(f.get("district") or "").strip()[:200], county=(f.get("county") or "").strip()[:80],
+                    role=pick("role", PILOT_ROLES), students=students, interest=pick("interest", PILOT_INTEREST),
+                    start_term=pick("start_term", PILOT_TERMS), site=pick("site", PILOT_SITES),
+                    notes=(f.get("notes") or "").strip()[:1000], created_at=now())
+        auth.failed_attempt(ip)                  # counts sign-ups per network for the limit above
+        return render_template("public/pilot.html", sent=True, form={}, **_pilot_lists())
+    return render_template("public/pilot.html", form={}, **_pilot_lists())
+
+
+def _pilot_lists():
+    return {"roles": PILOT_ROLES, "interests": PILOT_INTEREST, "terms": PILOT_TERMS, "sites": PILOT_SITES}
 
 
 @bp.route("/login", methods=["GET", "POST"])

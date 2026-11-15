@@ -38,6 +38,7 @@ def console():
                 "WHERE dv.status != 'retired' AND (dv.last_seen IS NULL OR dv.last_seen < ?) ORDER BY dv.last_seen LIMIT 20", ago(hours=2)) \
         if (sp("platform.fleet") or sp("device.health")) else []
     leads = d.q("SELECT * FROM leads ORDER BY created_at DESC LIMIT 20") if (sp("platform.clients.leads") or sp("platform.clients")) else []
+    pilots = d.q("SELECT * FROM pilot_signups ORDER BY created_at DESC LIMIT 50") if (sp("platform.clients.leads") or sp("platform.clients")) else []
     invoices = d.q("SELECT i.*, o.name AS client FROM invoices i JOIN orgs o ON o.id = i.org_id ORDER BY i.created_at DESC LIMIT 30") \
         if (sp("platform.billing") or sp("platform.quotes")) else []
     grants = d.q("SELECT sa.*, s.name AS school FROM support_access sa JOIN schools s ON s.id = sa.school_id WHERE sa.expires_at > ? ORDER BY sa.expires_at", now()) \
@@ -45,7 +46,7 @@ def console():
     staff = d.q("SELECT u.name, u.email, m.role, m.id AS mid FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.org_id = ? ORDER BY u.name",
                 platform_org_id(d)) if sp("platform.staff") else []
     alive = d.q("SELECT dv.status, COUNT(*) AS n FROM devices dv GROUP BY dv.status")
-    return render_template("staff/console.html", clients=clients, fleet=fleet, stale=stale, leads=leads, invoices=invoices,
+    return render_template("staff/console.html", clients=clients, fleet=fleet, stale=stale, leads=leads, pilots=pilots, invoices=invoices,
                            grants=grants, staff=staff, alive=alive, roles=PLATFORM_ROLES)
 
 
@@ -172,3 +173,18 @@ def school(sid):
     alerts = d.q("SELECT * FROM alerts WHERE school_id = ? ORDER BY created_at DESC LIMIT 30", sid)
     log(d, "support.view", s["name"], school_id=sid)
     return render_template("staff/school.html", s=s, devices=devs, alerts=alerts, granted=granted)
+
+
+@bp.route("/pilots.csv")
+def pilots_csv():
+    """All pilot sign-ups as a spreadsheet file."""
+    if not (sp("platform.clients.leads") or sp("platform.clients")):
+        abort(403)
+    import csv, io
+    cols = ["created_at", "name", "email", "phone", "school", "district", "county", "role", "students", "interest", "start_term", "site", "notes"]
+    buf = io.StringIO()
+    w = csv.writer(buf)
+    w.writerow(cols)
+    for r in db().q("SELECT * FROM pilot_signups ORDER BY created_at"):
+        w.writerow([("'" + str(r[c])) if str(r[c] or "")[:1] in "=+-@" else r[c] for c in cols])
+    return Response(buf.getvalue(), mimetype="text/csv", headers={"Content-Disposition": "attachment; filename=pilot_signups.csv"})

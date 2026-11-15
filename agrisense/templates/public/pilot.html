@@ -1,0 +1,48 @@
+{% extends "base.html" %}{% block title %}Join the fall 2027 pilot{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="narrow" style="max-width:720px">
+{% if sent %}
+<div class="card">
+  <h1>Thank you, you're on the list</h1>
+  <p>We'll email you within a week about the pilot, the kit and the teacher training. Questions any time: <a href="mailto:felix@agrisensehub.com">felix@agrisensehub.com</a>.</p>
+  <a class="btn" href="{{ url_for('public.landing') }}">Back to home</a>
+</div>
+{% else %}
+<div class="card">
+  <div class="eyebrow">Missouri high schools · fall 2027</div>
+  <h1>Pilot AgriSense Lab in your classroom</h1>
+  <p class="lead">Students wire real farm sensors, run a pump, and decide with data. Pilot schools help shape the lessons before they are final.</p>
+  <div class="grid g2" style="gap:16px;margin-top:8px">
+    <div><b>Pilot schools get</b>
+      <ul><li>A kit, set up and tested</li><li>Level 1 and 2 teacher training, with PD hours</li><li>Direct support through the first semester</li><li>A say in the lessons before they are final</li></ul></div>
+    <div><b>We ask you to</b>
+      <ul><li>Teach at least four lessons in one semester</li><li>Give short feedback after each lesson</li><li>Let us share de-identified results</li></ul></div>
+  </div>
+</div>
+<div class="card">
+  <h2>Sign up</h2>
+  <p class="muted">Takes two minutes. Signing up doesn't commit you to anything; we'll talk first.</p>
+  <form method="post">{{ csrf() }}
+    <div style="position:absolute;left:-5000px" aria-hidden="true"><label for="w">Leave this empty</label><input id="w" name="website" tabindex="-1" autocomplete="off"></div>
+    <div class="grid g2" style="gap:12px">
+      <div class="field"><label for="n">Your name *</label><input id="n" name="name" value="{{ form.name or '' }}" required autocomplete="name"></div>
+      <div class="field"><label for="e">School email *</label><input id="e" type="email" name="email" value="{{ form.email or '' }}" required autocomplete="email"></div>
+      <div class="field span2"><label for="s">School *</label><input id="s" name="school" value="{{ form.school or '' }}" required></div>
+      <div class="field"><label for="d">School district</label><input id="d" name="district" value="{{ form.district or '' }}"></div>
+      <div class="field"><label for="c">County</label><input id="c" name="county" value="{{ form.county or '' }}"></div>
+      <div class="field"><label for="r">Your role</label><select id="r" name="role"><option value="">Choose…</option>{% for x in roles %}<option {{ 'selected' if form.role == x }}>{{ x }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="ph">Phone (optional)</label><input id="ph" type="tel" name="phone" value="{{ form.phone or '' }}" autocomplete="tel"></div>
+      <div class="field"><label for="st">Students who would use it each year</label><input id="st" type="number" min="0" max="5000" name="students" value="{{ form.students or '' }}"></div>
+      <div class="field"><label for="i">Which option interests you?</label><select id="i" name="interest"><option value="">Choose…</option>{% for x in interests %}<option {{ 'selected' if form.interest == x }}>{{ x }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="t">When could you start?</label><select id="t" name="start_term"><option value="">Choose…</option>{% for x in terms %}<option {{ 'selected' if form.start_term == x }}>{{ x }}</option>{% endfor %}</select></div>
+      <div class="field"><label for="g">Growing space</label><select id="g" name="site"><option value="">Choose…</option>{% for x in sites %}<option {{ 'selected' if form.site == x }}>{{ x }}</option>{% endfor %}</select></div>
+      <div class="field span2"><label for="nt">Anything else? (classes you teach, questions)</label><textarea id="nt" name="notes" rows="3">{{ form.notes or '' }}</textarea></div>
+    </div>
+    <p class="muted" style="font-size:13px">We use these details only to contact you about the pilot. We never ask for student information here. <a href="{{ url_for('public.privacy') }}">Privacy</a></p>
+    <button class="btn primary">Sign me up</button>
+  </form>
+</div>
+{% endif %}
+</div>
+{% endblock %}
