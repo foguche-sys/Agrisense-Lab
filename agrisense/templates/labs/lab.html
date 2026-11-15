@@ -2,7 +2,8 @@
 {% block body %}
 <div class="page-head"><div><div class="eyebrow">Lab {{ lesson.code }} · {{ lesson.duration }}{% if team %} · {{ team.name }}{% endif %}</div><h1>{{ lesson.title }}</h1></div>
   <div class="row">
-    <a class="btn" href="{{ url_for('labs.sheet', code=lesson.code) }}">Print lab sheet</a>
+    <a class="btn" href="{{ url_for('labs.sheet', code=lesson.code) }}">Print lab sheet</a>{% if teacher %}
+    <a class="btn" href="{{ url_for('labs.guide', code=lesson.code) }}">Teacher guide</a>{% endif %}
     {% if tool %}<a class="btn" href="{{ url_for(tool[0]) }}">{{ tool[1] }}</a>{% endif %}
     {% if assignment %}<a class="btn primary" href="{{ url_for('student.journal', aid=assignment.id) }}">Open our journal</a>{% endif %}</div></div>
 <div class="banner info lab-hook"><b>The challenge</b> {{ c.hook }}</div>

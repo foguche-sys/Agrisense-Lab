@@ -1,7 +1,10 @@
 """Student lab instructions and printable lab sheets, one per lesson."""
 from flask import Blueprint, abort, g, redirect, render_template, request, url_for
 
+from ..rbac import PLATFORM_ROLES
 from ..services.lab_content import LABS
+from ..services.teacher_guides import GUIDES
+from ..services.training import is_teacherish
 from .util import db, student_team
 
 bp = Blueprint("labs", __name__, url_prefix="/labs")
@@ -46,10 +49,27 @@ def lab(code):
     tool = TOOLS.get(code)
     if tool and tool[0].startswith("student.") and not team:
         tool = None
-    return render_template("labs/lab.html", lesson=lesson, c=c, team=team, assignment=assignment, tool=tool)
+    return render_template("labs/lab.html", lesson=lesson, c=c, team=team, assignment=assignment, tool=tool, teacher=is_teacher())
 
 
 @bp.route("/<code>/sheet")
 def sheet(code):
     lesson, c, cls, team, assignment = _load(code)
     return render_template("labs/sheet.html", lesson=lesson, c=c, team=team, cls=cls)
+
+
+def is_teacher():
+    """Teachers, school admins and AgriSense staff. Students (and parents, observers) never see teacher guides."""
+    return is_teacherish(g.memberships) or any(m["role"] in PLATFORM_ROLES for m in g.memberships)
+
+
+@bp.route("/<code>/guide")
+def guide(code):
+    """Teacher guide: set-up, timing, expected results, answers, troubleshooting. Teachers only."""
+    if not is_teacher():
+        abort(403)
+    d = db()
+    lesson = d.one("SELECT * FROM lessons WHERE code = ?", code)
+    if not lesson or code not in GUIDES:
+        abort(404)
+    return render_template("labs/guide.html", lesson=lesson, c=LABS[code], t=GUIDES[code])

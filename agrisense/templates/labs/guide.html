@@ -1,0 +1,33 @@
+{% extends "base.html" %}{% block title %}Teacher guide {{ lesson.code }}{% endblock %}
+{% block body %}
+<div class="row no-print" style="justify-content:space-between;margin-bottom:14px">
+  <a class="btn" href="{{ url_for('labs.lab', code=lesson.code) }}">Back to the lab</a>
+  <span class="muted">Teachers only: students cannot open this page. Print with Ctrl+P (Windows, Chromebook) or ⌘P (Mac).</span></div>
+<div class="sheet guide">
+  <div class="sheet-head"><div><div class="eyebrow">AgriSense Lab · Teacher guide · Lesson {{ lesson.code }}</div><h1>{{ lesson.title }}</h1>
+    <p class="muted" style="margin:4px 0 0">{{ lesson.duration }} · {{ EQUIPMENT.get(lesson.equipment, lesson.equipment) }}{% if KIT_NOTE.get(lesson.code) %} · {{ KIT_NOTE[lesson.code] }}{% endif %}</p></div></div>
+  <p class="sheet-hook"><b>Big idea:</b> {{ t.big_idea }}</p>
+  <p><b>Students' goal:</b> {{ c.goal }}</p>
+  {% if c.safety %}<p class="sheet-safety"><b>Safety:</b> {{ c.safety|join(' ') }}</p>{% endif %}
+  <h2>Before class</h2>
+  <ul>{% for b in t.before %}<li>{{ b }}</li>{% endfor %}<li>Students need: {{ c.need|join('; ') }}.</li></ul>
+  <h2>Lesson plan</h2>
+  <table class="sheet-table"><tr><th style="width:70px">Minutes</th><th>What happens</th></tr>
+    {% for m, d in t.plan %}<tr><td>{{ m }}</td><td>{{ d }}</td></tr>{% endfor %}</table>
+  <h2>What to expect</h2>
+  <ul>{% for e in t.expect %}<li>{{ e }}</li>{% endfor %}</ul>
+  <p class="muted" style="font-size:13px">Typical values. Your soil, room and sensors will differ a little; that is part of the science.</p>
+  <h2>Answers to "Think and explain"</h2>
+  {% for q in c.questions %}<p class="sheet-q"><b>{{ loop.index }}. {{ q }}</b><br>{{ t.answers[loop.index0] }}</p>{% endfor %}
+  <h2>If something goes wrong</h2>
+  <table class="sheet-table"><tr><th>Problem</th><th>What to do</th></tr>
+    {% for p, f in t.trouble %}<tr><td>{{ p }}</td><td>{{ f }}</td></tr>{% endfor %}</table>
+  <h2>Marking: look for</h2>
+  <ul>{% for a in t.assess %}<li>{{ a }}</li>{% endfor %}<li>Claim, evidence and reasoning use the class's own numbers.</li></ul>
+  <h2>Every learner</h2>
+  <p><b>Extra support:</b> {{ t.support }}</p>
+  <p><b>Finished early:</b> {{ t.stretch }}</p>
+  <p class="sheet-challenge"><b>Plan B (missing or broken part):</b> {{ t.backup }}</p>
+  {% if c.words %}<p class="sheet-words">{% for w, d in c.words.items() %}<b>{{ w }}</b>: {{ d }} {% endfor %}</p>{% endif %}
+</div>
+{% endblock %}
