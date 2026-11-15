@@ -29,7 +29,7 @@ def home():
     mates = d.q("SELECT u.name FROM memberships m JOIN users u ON u.id = m.user_id WHERE m.team_id = ? AND m.role = 'student' ORDER BY u.name", team["id"])
     assigns = d.q("SELECT a.*, l.code, l.title, l.summary, l.equipment, j.status AS jstatus, j.score FROM assignments a "
                   "JOIN lessons l ON l.id = a.lesson_id LEFT JOIN journals j ON j.assignment_id = a.id AND j.team_id = ? "
-                  "WHERE a.class_id = ? ORDER BY l.code", team["id"], cls["id"])
+                  "WHERE a.class_id = ? ORDER BY l.seq, l.code", team["id"], cls["id"])
     return render_template("student/home.html", cls=cls, team=team, tray=tray, reading=reading, mates=mates, assigns=assigns)
 
 
@@ -117,7 +117,7 @@ def parent():
                 continue
             team = d.one("SELECT * FROM teams WHERE id = ?", sm["team_id"]) if sm["team_id"] else None
             work = d.q("SELECT l.code, l.title, j.status, j.score, a.points FROM assignments a JOIN lessons l ON l.id = a.lesson_id "
-                       "LEFT JOIN journals j ON j.assignment_id = a.id AND j.team_id = ? WHERE a.class_id = ? ORDER BY l.code",
+                       "LEFT JOIN journals j ON j.assignment_id = a.id AND j.team_id = ? WHERE a.class_id = ? ORDER BY l.seq, l.code",
                        team["id"] if team else "", cls["id"])
             kids.append({"child": child, "cls": cls, "team": team, "work": work})
     if not kids:

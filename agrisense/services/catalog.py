@@ -1,24 +1,31 @@
 """Built-in lessons and plans, loaded once when the database is created (flask --app agrisense init-db)."""
 from ..db import jdump, new_id
 
+# Lab 1 runs on the Starter kit, in this order; the Field add-on only adds logging in every tray and outdoors (KIT_NOTE).
 LESSONS = [
     ("1.1", "Meet the soil bench", "activity", "Tour the five trays, name each soil and predict which one holds the most water.",
      "30 min", "bench", "HS-LS2-1,SEP-1", ["Predict", "Observe the trays", "Record first readings"]),
-    ("1.2", "Reading the probe", "activity", "What moisture, temperature, EC and pH mean; take and record readings from every tray.",
+    ("1.2", "Reading the probe", "activity", "What moisture, temperature, EC and pH mean; move the Trainer's probe from tray to tray and record every reading.",
      "40 min", "bench", "SEP-3,SEP-4", ["What each number means", "Take five readings", "Compare with a partner"]),
-    ("1.3", "Which soil dries fastest?", "lab", "Track moisture for 48 h in sandy, loam and clay. Plot drying curves and explain the difference.",
-     "2 × 45 min", "bench", "HS-ESS2-5,SEP-4,SEP-5", ["Plan", "Collect 48 h of data", "Graph", "Claim–evidence–reasoning"]),
+    ("1.3", "Build the Trainer pump loop", "activity", "Wire the pump, pressure sensor and tank switch on the Trainer board and check NO FLOW protection.",
+     "50 min", "trainer", "ETS1-2,SEP-2", ["Wire FIELD I/O", "Test pressure", "Trigger NO FLOW safely"]),
     ("1.4", "How much water is enough?", "lab", "Request pump runs of different lengths and measure the moisture change per second.",
      "45 min", "bench", "SEP-3,SEP-5,CCC-3", ["Choose run times", "Request water", "Calculate % per second"]),
     ("1.5", "Salt and fertilizer", "lab", "Compare EC in fertilized and salty trays with loam. Decide which plants could grow in each.",
      "45 min", "bench", "HS-LS2-6,SEP-6", ["Compare EC", "Look up crop tolerance", "Recommend"]),
-    ("1.6", "Build the Trainer pump loop", "activity", "Wire the pump, pressure sensor and tank switch on the Trainer Board and check NO FLOW protection.",
-     "50 min", "trainer", "ETS1-2,SEP-2", ["Wire FIELD I/O", "Test pressure", "Trigger NO FLOW safely"]),
-    ("1.7", "My first dashboard", "activity", "In the Field Studio, add feeds and blocks to control the fan and pump and chart the pressure.",
+    ("1.6", "Build your own sensor node", "lab", "Build a soil sensor node on the build deck, check its power with a meter, add sensor pods "
+     "and get its readings on the website.",
+     "2 × 45 min", "deck", "ETS1-2,SEP-3", ["Meet the parts", "Check the power", "Connect the probe", "Add sensor pods", "Go live"]),
+    ("1.7", "Which soil dries fastest?", "lab", "Log moisture for 48 h in sandy and clay soil with your two probes. Plot drying curves and explain the difference.",
+     "2 × 45 min", "bench", "HS-ESS2-5,SEP-4,SEP-5", ["Plan", "Collect 48 h of data", "Graph", "Claim–evidence–reasoning"]),
+    ("1.8", "My first dashboard", "activity", "In the Field Studio, add feeds and blocks to control the fan and pump and chart the pressure.",
      "40 min", "trainer", "SEP-8,ETS1-4", ["Create a dashboard", "Add toggles and a chart", "Test with your Trainer"]),
-    ("1.8", "Smart irrigation rule", "lab", "Write an Action that waters when moisture drops below your threshold, then test and tune it.",
+    ("1.9", "Smart irrigation rule", "lab", "Write an Action that waters when moisture drops below your threshold, then test and tune it.",
      "2 × 45 min", "trainer", "ETS1-3,SEP-2,SEP-6", ["Choose a threshold", "Write the Action", "Test, check, adjust"]),
-    ("1.9", "Field decision report", "lab", "Use a week of bench data to recommend a watering schedule for each soil. Present to the class.",
+    ("1.10", "Code it yourself", "lab", "Program the student Arduino from a Chromebook to read the soil, show it on the LED grid "
+     "and ask the Trainer for water. The Trainer answers OK or REFUSED.",
+     "2 × 45 min", "r4", "ETS1-3,SEP-5", ["Connect", "Read the soil", "Show it on the LED grid", "Ask for water", "Test the safety"]),
+    ("1.11", "Field decision report", "lab", "Use a week of data to recommend a watering schedule for each soil. Present to the class.",
      "2 × 45 min", "data", "HS-ESS3-4,SEP-7,SEP-8", ["Download data", "Analyze", "Write recommendation", "Present"]),
     # Unit 2: AI with your own data (AI Lab). Models are trained on the class's own readings, not a ready-made dataset.
     ("2.1", "When will my tray need water?", "lab", "Fit a line to your tray's drying curve, predict the hours until the refill point, "
@@ -38,8 +45,19 @@ LESSONS = [
      "45 min", "ai", "AI4K12-5,SEP-7", ["Look at the evidence", "Take a side", "Debate", "Write your position"]),
 ]
 
+KIT_NOTE = {  # what the optional Field add-on changes; every lesson runs on the Starter kit (or the Virtual plan, in simulation)
+    "1.7": "Field add-on: logs every tray, so loam joins the comparison",
+    "1.11": "Field add-on: a full week of data for every tray",
+    "2.1": "Field add-on: predict for any tray or field node",
+    "2.4": "Field add-on: zones from your own field nodes",
+}
+EQUIPMENT = {"bench": "Soil bench", "trainer": "Trainer board", "deck": "Build deck", "r4": "Student Arduino", "data": "Data", "ai": "AI Lab"}
+
+RENUMBER_2026 = {"1.3": "1.7", "1.6": "1.3", "1.7": "1.8", "1.8": "1.9", "1.9": "1.11"}
+
+
 PLANS = [   # website licences (Nov 2026). Hardware kits are on /kits (services/kits.py).
-    ("pilot", "Pilot", 0, "Free website licence for one school for one semester: all 14 lessons, the AI Lab and the Field Studio. "
+    ("pilot", "Pilot", 0, "Free website licence for one school for one semester: all 16 lessons, the AI Lab and the Field Studio. "
                           "The kit is bought separately at pilot pricing (see Kits and pricing)."),
     ("virtual", "Virtual", 30000, "No hardware: every lesson in simulation mode, the AI Lab and the Field Studio, for one school."),
     ("school", "School", 30000, "Per kit per year, with a Starter kit: all lessons on real hardware, unlimited classes, data exports, support."),
@@ -49,15 +67,24 @@ PLANS = [   # website licences (Nov 2026). Hardware kits are on /kits (services/
 
 def seed_catalog(db):
     from .standards import MAP, short_codes
+    # Nov 2026 re-order (Starter kit first): old 1.3/1.6/1.7/1.8/1.9 became 1.7/1.3/1.8/1.9/1.11. Move existing rows with
+    # their content, so assignments and journals keep pointing at the same lesson.
+    old_16 = db.one("SELECT id FROM lessons WHERE code = '1.6' AND title = 'Build the Trainer pump loop'")
+    if old_16:
+        for old in RENUMBER_2026:
+            db.run("UPDATE lessons SET code = ? WHERE code = ?", "tmp-" + old, old)
+        for old, new in RENUMBER_2026.items():
+            db.run("UPDATE lessons SET code = ? WHERE code = ?", new, "tmp-" + old)
     have = {r["code"] for r in db.q("SELECT code FROM lessons")}
-    for code, title, kind, summary, dur, eq, std, parts in LESSONS:      # adds new lessons to existing databases too
+    for seq, (code, title, kind, summary, dur, eq, std, parts) in enumerate(LESSONS, 1):   # adds new lessons, keeps text current
         if code in MAP:
             std = short_codes(code)                                        # standards come from services/standards.py
         if code in have:
-            db.run("UPDATE lessons SET standards = ? WHERE code = ? AND standards <> ?", std, code, std)
+            db.run("UPDATE lessons SET title = ?, kind = ?, summary = ?, duration = ?, equipment = ?, standards = ?, parts = ?, seq = ? "
+                   "WHERE code = ?", title, kind, summary, dur, eq, std, jdump(parts), seq, code)
         else:
             db.insert("lessons", id=new_id("ls"), code=code, title=title, kind=kind, summary=summary, duration=dur,
-                      equipment=eq, standards=std, parts=jdump(parts))
+                      equipment=eq, standards=std, parts=jdump(parts), seq=seq)
     have_plans = {r["code"] for r in db.q("SELECT code FROM plans")}
     for code, name, cents, desc in PLANS:                                  # new plans are added, prices kept current
         if code in have_plans:

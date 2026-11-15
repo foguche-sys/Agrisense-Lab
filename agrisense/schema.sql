@@ -215,7 +215,8 @@ CREATE TABLE IF NOT EXISTS lessons (
   duration TEXT NOT NULL,
   equipment TEXT NOT NULL,               -- bench | trainer | data | ai
   standards TEXT NOT NULL,               -- comma list
-  parts TEXT NOT NULL DEFAULT '[]'       -- JSON list of part titles
+  parts TEXT NOT NULL DEFAULT '[]',      -- JSON list of part titles
+  seq INTEGER                            -- display order (Starter-kit lessons first)
 );
 
 CREATE TABLE IF NOT EXISTS assignments (

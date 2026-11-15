@@ -139,8 +139,8 @@ def lessons(cid):
                      points=int(request.form.get("points") or 20), created_by=g.user["id"], created_at=now())
             ok(f"Lesson {lesson['code']} assigned. Students see it on their home page.")
         return redirect(url_for("teacher.lessons", cid=cid))
-    all_lessons = d.q("SELECT * FROM lessons ORDER BY code")
-    assigned = d.q("SELECT a.*, l.code, l.title FROM assignments a JOIN lessons l ON l.id = a.lesson_id WHERE a.class_id = ? ORDER BY l.code", cid)
+    all_lessons = d.q("SELECT * FROM lessons ORDER BY seq, code")
+    assigned = d.q("SELECT a.*, l.code, l.title FROM assignments a JOIN lessons l ON l.id = a.lesson_id WHERE a.class_id = ? ORDER BY l.seq, l.code", cid)
     return render_template("teacher/lessons.html", cls=cls, lessons=all_lessons, assigned=assigned)
 
 
@@ -169,7 +169,7 @@ def gradebook(cid):
                          graded_by=g.user["id"], updated_at=now())
                 ok("Grade saved.")
         return redirect(url_for("teacher.gradebook", cid=cid, open=request.form.get("journal_id")))
-    assigns = d.q("SELECT a.*, l.code, l.title FROM assignments a JOIN lessons l ON l.id = a.lesson_id WHERE a.class_id = ? ORDER BY l.code", cid)
+    assigns = d.q("SELECT a.*, l.code, l.title FROM assignments a JOIN lessons l ON l.id = a.lesson_id WHERE a.class_id = ? ORDER BY l.seq, l.code", cid)
     teams = d.q("SELECT * FROM teams WHERE class_id = ? ORDER BY name", cid)
     jr = d.q("SELECT j.* FROM journals j JOIN teams t ON t.id = j.team_id WHERE t.class_id = ?", cid)
     grid = {(j["assignment_id"], j["team_id"]): j for j in jr}

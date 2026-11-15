@@ -71,6 +71,7 @@ class Database:
         ("pump_requests", "checked_at", "TEXT"),
         ("users", "failed_logins", "INTEGER NOT NULL DEFAULT 0"),
         ("users", "locked_until", "TEXT"),
+        ("lessons", "seq", "INTEGER"),
     ]
 
     def init_schema(self):

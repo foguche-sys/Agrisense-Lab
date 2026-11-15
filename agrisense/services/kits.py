@@ -13,7 +13,7 @@ WHY = [   # short benefit tiles near the top of /kits
     ("Hands-on from day one", "Students plug in real sensors, a pump and a fan in the first lesson."),
     ("Real farm decisions", "They measure the soil, decide when to water, and check if they were right."),
     ("Works on Chromebooks", "Everything runs in the browser, including coding the student Arduino."),
-    ("Ready to teach", "14 lessons mapped to NGSS, CSTA and AFNR, with training and PD hours."),
+    ("Ready to teach", "16 lessons mapped to NGSS, CSTA and AFNR, with training and PD hours."),
 ]
 
 KITS = [
@@ -25,7 +25,7 @@ KITS = [
                   "A water station to water plants and see the result",
                   "A build deck where students build their own sensor",
                   "Sensors, leads and a hard carry case",
-                  "All 14 lessons, dashboards and the AI Lab online"],
+                  "All 16 lessons, dashboards and the AI Lab online"],
      "best_for": "Agriculture, science and CTE classrooms starting hands-on precision agriculture."},
     {"code": "field", "name": "Field add-on", "price": 2249, "unit": "one-time, add to a Starter", "image": "img/kits/field_kit.jpg",
      "tag": "Optional",
@@ -41,7 +41,7 @@ KITS = [
     {"code": "virtual", "name": "Virtual", "price": LICENCE_PER_KIT, "unit": "per year", "image": None,
      "tag": "No hardware",
      "summary": "Start today in the browser: every lesson runs on simulated sensors.",
-     "includes": ["All 14 lessons in simulation mode", "AI Lab with real sample farm data",
+     "includes": ["All 16 lessons in simulation mode", "AI Lab with real sample farm data",
                   "Dashboards students build themselves", "Online teacher training"],
      "best_for": "Trying AgriSense Lab before buying hardware, or a computer science class."},
 ]

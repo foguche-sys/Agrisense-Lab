@@ -7,9 +7,10 @@ from .util import db, student_team
 bp = Blueprint("labs", __name__, url_prefix="/labs")
 
 TOOLS = {  # where the work happens for each lab: (endpoint, label)
-    "1.1": ("student.tray", "Open our tray"), "1.2": ("student.tray", "Open our tray"), "1.3": ("data.explorer", "Open the data"),
-    "1.4": ("student.tray", "Open our tray"), "1.5": ("student.tray", "Open our tray"), "1.6": ("studio.dashboards", "Open the Field Studio"),
-    "1.7": ("studio.dashboards", "Open the Field Studio"), "1.8": ("studio.dashboards", "Open the Field Studio"), "1.9": ("data.explorer", "Open the data"),
+    "1.1": ("student.tray", "Open our tray"), "1.2": ("student.tray", "Open our tray"), "1.3": ("studio.dashboards", "Open the Field Studio"),
+    "1.4": ("student.tray", "Open our tray"), "1.5": ("student.tray", "Open our tray"), "1.6": ("student.tray", "Open our tray"),
+    "1.7": ("data.explorer", "Open the data"), "1.8": ("studio.dashboards", "Open the Field Studio"), "1.9": ("studio.dashboards", "Open the Field Studio"),
+    "1.10": ("student.tray", "Open our tray"), "1.11": ("data.explorer", "Open the data"),
     "2.1": ("ai.predict", "Open AI Lab 2.1"), "2.2": ("ai.leaf", "Open AI Lab 2.2"), "2.3": ("ai.sensor", "Open AI Lab 2.3"),
     "2.4": ("ai.zones", "Open AI Lab 2.4"), "2.5": ("ai.decide", "Open AI Lab 2.5"),
 }

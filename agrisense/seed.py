@@ -167,7 +167,7 @@ def run(db):
     db.insert("actions", id=new_id("ac"), team_id=t1["id"], name="Fan on when hot", feed_key=f"{s}.air-temp", op="gt", threshold="30",
               effect="on", target_feed=f"{s}.fan", seconds=30, rest_seconds=120, start_hhmm="00:00", end_hhmm="23:59", enabled=1, created_at=now())
 
-    lesson = db.one("SELECT * FROM lessons WHERE code = '1.3'")
+    lesson = db.one("SELECT * FROM lessons WHERE code = '1.7'")
     for c in (cls, sim_cls):
         db.insert("assignments", id=new_id("as"), class_id=c, lesson_id=lesson["id"], data_source="live", allow_pump=1, points=20,
                   created_by=t_uid, created_at=now())

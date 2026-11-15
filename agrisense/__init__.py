@@ -63,9 +63,10 @@ def create_app(test_config=None):
     @app.context_processor
     def _globals():
         from .rbac import ROLES, roles_of
+        from .services import catalog
         mine = roles_of(getattr(g, "memberships", []) or [])
         return {"csrf_token": auth.csrf_token, "any_role": lambda *r: bool(mine & set(r)), "allowed": auth.allowed, "ROLES": ROLES,
-                "my_roles": mine, "site": app.config["SITE_NAME"]}
+                "my_roles": mine, "site": app.config["SITE_NAME"], "EQUIPMENT": catalog.EQUIPMENT, "KIT_NOTE": catalog.KIT_NOTE}
 
     @app.template_filter("ago")
     def _ago(ts):

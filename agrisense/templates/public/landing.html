@@ -35,12 +35,13 @@
 </section>
 
 <section id="lessons" style="margin-top:40px">
-  <h2>Lab 1: Soil, water and smart irrigation</h2>
-  <p class="muted">Aligned to NGSS, CSTA and the AFNR Power, Structural &amp; Technical Systems pathway: <a href="{{ url_for('public.standards') }}">see the standards map</a>.</p>
+  <h2>16 lessons</h2>
+  <p class="muted">Lab 1 (1.1–1.11) runs on the Starter kit, in order. Lab 2 (2.1–2.5) is the AI Lab. The Field add-on is optional: it adds logging in every tray and outdoors.
+  Aligned to NGSS, CSTA and the AFNR Power, Structural &amp; Technical Systems pathway: <a href="{{ url_for('public.standards') }}">see the standards map</a>.</p>
   <div class="card table-wrap"><table class="t">
-    <tr><th>#</th><th>Lesson</th><th>Uses</th><th>Time</th><th>Standards</th></tr>
+    <tr><th>#</th><th>Lesson</th><th>Uses</th><th>Kit</th><th>Time</th><th>Standards</th></tr>
     {% for l in lessons %}<tr><td class="mono">{{ l.code }}</td><td><b>{{ l.title }}</b><br><small>{{ l.summary }}</small></td>
-      <td><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data','ai':'AI Lab'}.get(l.equipment, l.equipment) }}</span></td><td>{{ l.duration }}</td><td><small class="mono">{{ l.standards }}</small></td></tr>{% endfor %}
+      <td><span class="pill">{{ EQUIPMENT.get(l.equipment, l.equipment) }}</span></td><td><span class="pill ok">Starter</span>{% if KIT_NOTE.get(l.code) %}<br><small class="muted">{{ KIT_NOTE[l.code] }}</small>{% endif %}</td><td>{{ l.duration }}</td><td><small class="mono">{{ l.standards }}</small></td></tr>{% endfor %}
   </table></div>
 </section>
 

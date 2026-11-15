@@ -54,10 +54,10 @@ GUIDES = {
                     ("Two classes share one kit", "That's fine: each class has its own teams. Use the class switcher at the top of Teach.")],
     },
     "m4": {
-        "intro": "Lessons 1.1–1.3 need no wiring: students read the soil bench and write a claim with evidence.",
+        "intro": "Lessons 1.1 and 1.2 need no wiring: students read the soil bench and write a claim with evidence.",
         "why": "These lessons build the habits for everything later: predict, measure, explain with numbers.",
         "steps": {
-            "assign": ("Teach → Lessons. Open lesson 1.1, set dates and points, and press Assign. Repeat for 1.2 and 1.3.",
+            "assign": ("Teach → Lessons. Open lesson 1.1, set dates and points, and press Assign. Repeat for 1.2.",
                        "The lessons show 'Assigned' and appear on students' 'My class' pages, with the lab instructions and a printable sheet."),
             "sim": ("On the live bench, switch simulation on. Try the 'dry spell' event and a faster speed.",
                     "A purple SIMULATED DATA banner appears for you and your students, and the readings change faster."),
@@ -113,7 +113,7 @@ WORKSHOP = [
     ("1:45", "15 min", "Break", ""),
     ("2:00", "60 min", "Field nodes and the gateway", "Power a field node, pair it with the gateway, find its readings on the website, set up the pump node."),
     ("3:00", "45 min", "Lunch", ""),
-    ("3:45", "60 min", "Irrigation lessons in practice", "Teach lessons 1.4 and 1.8 to each other: predict → water → check, approving runs, a smart irrigation rule."),
+    ("3:45", "60 min", "Irrigation lessons in practice", "Teach lessons 1.4 and 1.9 to each other: predict → water → check, approving runs, a smart irrigation rule."),
     ("4:45", "45 min", "The AI Lab", "Lessons 2.1 (predict watering) and 2.3 (sensor check) on real data; how to run the 2.5 debate."),
     ("5:30", "30 min", "Plan your unit", "Each teacher maps lessons onto their calendar and standards, and leaves with a plan for the first month."),
 ]
@@ -122,7 +122,7 @@ WORKSHOP_BRING = ["A laptop or Chromebook with Chrome", "Your class list (or a m
 
 # ---------------------------------------------------------------- Level 3: the classroom project
 PROJECT_IDEAS = [
-    "A full irrigation unit: lessons 1.3, 1.4, 1.8 and 1.9 with one class, ending in student recommendations.",
+    "A full irrigation unit: lessons 1.4, 1.7, 1.9 and 1.11 with one class, ending in student recommendations.",
     "The AI unit: lessons 2.1–2.5, with the class's own predictions checked over two weeks.",
     "A school-garden deployment: field nodes A–D outside for a month, with zones (lesson 2.4) and a watering plan.",
     "Your own idea, using the kit with a real local farm question.",

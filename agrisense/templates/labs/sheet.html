@@ -11,7 +11,7 @@
   {% if c.safety %}<p class="sheet-safety"><b>Safety:</b> {{ c.safety|join(' ') }}</p>{% endif %}
   <h2>Steps</h2>
   {% for s in c.steps %}<div class="sheet-step"><span class="box"></span><div><b>{{ loop.index }}. {{ s.title }}.</b> {{ s.do|join(' ') }}<br><small class="muted">Done when: {{ s.check }}</small></div></div>{% endfor %}
-  {% if lesson.code in ('1.1','1.3','2.1') %}<h2>My prediction (before you look)</h2><div class="lines"><div></div><div></div></div>{% endif %}
+  {% if lesson.code in ('1.1','1.7','2.1') %}<h2>My prediction (before you look)</h2><div class="lines"><div></div><div></div></div>{% endif %}
   <h2>Data</h2>
   <table class="sheet-table"><tr>{% for h in c.table %}<th>{{ h }}</th>{% endfor %}</tr>
     {% for r in c.rows %}<tr><td>{{ r }}</td>{% for h in c.table[1:] %}<td></td>{% endfor %}</tr>{% endfor %}

@@ -14,7 +14,7 @@ bp = Blueprint("public", __name__)
 @bp.route("/")
 def landing():
     plans = db().q("SELECT * FROM plans ORDER BY COALESCE(price_cents, 99999999)")
-    lessons = db().q("SELECT * FROM lessons ORDER BY code")
+    lessons = db().q("SELECT * FROM lessons ORDER BY seq, code")
     return render_template("public/landing.html", plans=plans, lessons=lessons)
 
 
@@ -191,7 +191,7 @@ def privacy():
 def standards():
     """Public standards alignment: NGSS, CSTA and AFNR for every lesson, for purchasing and curriculum reviews."""
     from ..services import standards as S
-    lessons = db().q("SELECT code, title, duration FROM lessons ORDER BY code")
+    lessons = db().q("SELECT code, title, duration FROM lessons ORDER BY seq, code")
     return render_template("public/standards.html", S=S, lessons=lessons, cov=S.coverage())
 
 
