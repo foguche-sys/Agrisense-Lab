@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}Student Data Privacy Agreement{% endblock %}
+{% block body %}
+<div class="narrow doc" style="max-width:860px"><div class="card stack">
+<div class="eyebrow">Version {{ version }}</div>
+<h1>Student Data Privacy Agreement: key terms</h1>
+<p>We sign a privacy agreement with every district or school before students are added. <b>We prefer your standard:</b> send us your district's National Data Privacy Agreement (NDPA v2.2) or your state alliance's version and we sign it. If you have none, we use our own agreement, with the terms below.</p>
+<div class="table-wrap"><table class="t">
+<tr><th>Term</th><th>What we commit to</th></tr>
+<tr><td>Ownership</td><td>Student data belongs to the school. We are a FERPA school official under the school's direct control.</td></tr>
+<tr><td>Use</td><td>Only to provide, secure and support AgriSense Lab. No selling, no advertising, no profiling, no AI training on student data.</td></tr>
+<tr><td>Parents</td><td>We help the school answer a parent's request to see or correct records within 10 business days.</td></tr>
+<tr><td>Security</td><td>Written security program (NIST CSF), encryption in transit and at rest, US hosting, role-based access, activity log.</td></tr>
+<tr><td>Breach</td><td>Written notice to the school within 72 hours of confirming it, or sooner if state law requires.</td></tr>
+<tr><td>Subprocessors</td><td>Render Services, Inc. (hosting, United States). 30 days' notice before adding another.</td></tr>
+<tr><td>Deletion</td><td>Within 30 days of a written request; within 60 days after the contract ends, after an export if the school wants one. Certificate of deletion on request.</td></tr>
+<tr><td>Minimum data</td><td>Students as first name + last initial, or as codes in minimal-data mode. No student email, birthday, address or photos.</td></tr>
+</table></div>
+
+<h2>Data we collect (Exhibit B)</h2>
+<div class="table-wrap"><table class="t"><tr><th>Category</th><th>Item</th><th>Collected</th><th>Notes</th></tr>
+{% for cat, item, yes, note in schedule %}<tr><td>{{ cat }}</td><td>{{ item }}</td><td>{{ yes }}</td><td class="muted">{{ note }}</td></tr>{% endfor %}
+</table></div>
+
+<h2>How long we keep it</h2>
+<div class="table-wrap"><table class="t"><tr><th>Data</th><th>Kept for</th></tr>
+{% for what, how in retention %}<tr><td>{{ what }}</td><td>{{ how }}</td></tr>{% endfor %}</table></div>
+
+<p>To sign: a school admin opens <b>School → Privacy</b> after signing in, or email <a href="mailto:{{ config.SUPPORT_EMAIL }}">{{ config.SUPPORT_EMAIL }}</a> for the full agreement or to send yours. Full details: <a href="{{ url_for('public.privacy') }}">privacy policy</a>.</p>
+</div></div>
+{% endblock %}

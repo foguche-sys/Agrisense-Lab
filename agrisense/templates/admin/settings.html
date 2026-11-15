@@ -11,6 +11,9 @@
   </div>
   <div class="card"><h2>Students and data</h2>
     <p class="muted" style="margin-top:0">Students sign in with the class code and two pictures, so they need no email or password.</p>
+    <div class="field"><label>Student names</label>{% for k, label in name_modes.items() %}
+      <label class="check"><input type="radio" name="student_names" value="{{ k }}" {{ 'checked' if name_mode == k }}> {{ label }}</label>{% endfor %}
+      <div class="hint">Applies to students added from now on. To change existing names to codes, use School → Privacy.</div></div>
     <label class="check"><input type="checkbox" name="parents_enabled" value="1" {{ 'checked' if s.get('parents_enabled') }}> Let parents see their own child's work</label>
     <div class="field" style="margin-top:10px"><label for="rd">Keep readings for (days)</label><input id="rd" type="number" name="retention_days" min="30" max="3650" value="{{ s.retention_days }}"></div>
     <div class="fields"><div><label for="tz">Time zone</label><select id="tz" name="timezone">{% for z in ['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'] %}<option {{ 'selected' if school.timezone == z }}>{{ z }}</option>{% endfor %}</select></div></div>

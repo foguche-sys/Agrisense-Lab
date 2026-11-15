@@ -36,6 +36,7 @@
 
 <section id="lessons" style="margin-top:40px">
   <h2>Lab 1: Soil, water and smart irrigation</h2>
+  <p class="muted">Aligned to NGSS, CSTA and the AFNR Power, Structural &amp; Technical Systems pathway: <a href="{{ url_for('public.standards') }}">see the standards map</a>.</p>
   <div class="card table-wrap"><table class="t">
     <tr><th>#</th><th>Lesson</th><th>Uses</th><th>Time</th><th>Standards</th></tr>
     {% for l in lessons %}<tr><td class="mono">{{ l.code }}</td><td><b>{{ l.title }}</b><br><small>{{ l.summary }}</small></td>

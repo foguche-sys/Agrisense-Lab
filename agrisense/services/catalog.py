@@ -46,9 +46,14 @@ PLANS = [
 
 
 def seed_catalog(db):
+    from .standards import MAP, short_codes
     have = {r["code"] for r in db.q("SELECT code FROM lessons")}
     for code, title, kind, summary, dur, eq, std, parts in LESSONS:      # adds new lessons to existing databases too
-        if code not in have:
+        if code in MAP:
+            std = short_codes(code)                                        # standards come from services/standards.py
+        if code in have:
+            db.run("UPDATE lessons SET standards = ? WHERE code = ? AND standards <> ?", std, code, std)
+        else:
             db.insert("lessons", id=new_id("ls"), code=code, title=title, kind=kind, summary=summary, duration=dur,
                       equipment=eq, standards=std, parts=jdump(parts))
     if not db.val("SELECT COUNT(*) AS n FROM plans"):

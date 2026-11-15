@@ -1,12 +1,68 @@
-{% extends "base.html" %}{% block title %}Privacy{% endblock %}
+{% extends "base.html" %}{% block title %}Privacy policy{% endblock %}
 {% block body %}
-<div class="narrow" style="max-width:760px"><div class="card stack">
-<h1>Privacy at AgriSense Lab</h1>
-<p><b>What we keep about students.</b> A first name with last initial, the class and team, a picture password (stored only as a one-way hash), lab journals, observations and the soil readings their team works with. No student email, birthday or address is needed.</p>
-<p><b>Who sees it.</b> The student's own team, their teachers, and their school's admins. Parents see only their own child. Researchers and observers see de-identified data only. AgriSense Hub support sees a school only when the school grants time-limited access for a ticket, and every view is logged.</p>
-<p><b>Downloads.</b> Exports are de-identified by default. Named exports are limited to teachers and school admins and are recorded in the school's activity log.</p>
-<p><b>Retention.</b> Each school sets how long readings are kept (365 days by default). A school can ask for all its data to be exported or deleted.</p>
-<p><b>Agreements.</b> We sign a student data privacy agreement with each district or school (in the School → Privacy page) before rostering students.</p>
-<p class="muted">Questions: {{ config.SUPPORT_EMAIL }}</p>
+<div class="narrow doc" style="max-width:860px"><div class="card stack">
+<div class="eyebrow">Version {{ version }} · effective November 15, 2026</div>
+<h1>AgriSense Lab privacy policy</h1>
+<p>AgriSense Lab is a teaching platform for schools, run by AgriSense Hub. Schools decide who uses it and what it holds. We collect as little about students as a lab lesson needs, and we never sell it, advertise with it or use it to train AI.</p>
+
+<div class="banner info"><b>In short</b>
+  <span>No student email, birthday or address · students sign in with two pictures · no ads, no selling, no AI training on student data · the school can delete a class's student data at any time.</span></div>
+
+<h2>1. What we collect</h2>
+<p>The table below is the full list. It is also Exhibit B of our <a href="{{ url_for('public.agreement') }}">Student Data Privacy Agreement</a>.</p>
+<div class="table-wrap"><table class="t"><tr><th>Category</th><th>Item</th><th>Collected</th><th>Notes</th></tr>
+{% for cat, item, yes, note in schedule %}<tr><td>{{ cat }}</td><td>{{ item }}</td><td>{{ yes }}</td><td class="muted">{{ note }}</td></tr>{% endfor %}
+</table></div>
+<p class="hint">Soil, water and sensor readings from the kit are not personal information unless they are linked to a named student.</p>
+
+<h2>2. How we use it</h2>
+<ul><li>To run the lessons: show readings, save journals, let teachers approve pump runs and grade work.</li>
+<li>To keep the service safe and working: sign-in, security logs, support a school has asked for.</li>
+<li>To improve the lessons, using only de-identified data that cannot be traced back to a student.</li></ul>
+
+<h2>3. What we never do</h2>
+<ul><li>Sell, rent or trade student data.</li>
+<li>Show ads to students, or use student data for targeted advertising.</li>
+<li>Build a profile of a student for anything but the school's purpose.</li>
+<li>Use student data, photos or writing to train or improve artificial-intelligence models, ours or anyone else's. The AI Lab models are fitted to the class's own sensor readings inside the lesson and are not reused.</li>
+<li>Collect biometric data. Picture passwords are a choice of two pictures, not a face or fingerprint.</li></ul>
+
+<h2>4. Who can see it</h2>
+<ul><li><b>Students</b> see their own team's work.</li>
+<li><b>Teachers</b> see their own classes; <b>school admins</b> see their school.</li>
+<li><b>Parents</b> see only their own child, and only if the school turns this on.</li>
+<li><b>Researchers and observers</b>, if a school adds them, see de-identified data only.</li>
+<li><b>AgriSense support</b> sees a school only when the school grants time-limited access for a support ticket. Every view is in the school's activity log.</li></ul>
+
+<h2>5. Schools are in control (FERPA and COPPA)</h2>
+<p>Under the Family Educational Rights and Privacy Act (FERPA) we act as a <b>school official</b>: we work for the school, under its direction, and student records stay the school's. For students under 13, the school gives consent on parents' behalf for this educational use only, as the Federal Trade Commission allows under the Children's Online Privacy Protection Act (COPPA). We follow the COPPA Rule as amended in 2025.</p>
+<ul><li><b>Parents</b> who want to see, correct or delete their child's information ask the school; we help the school within 10 business days. If a parent writes to us, we pass the request to the school.</li>
+<li><b>Minimal-data mode</b>: a school can store students as codes ("Student 07") instead of names. The teacher keeps the list of who is who, on paper or in the school's own system.</li>
+<li><b>End of a course</b>: a school admin can delete a class's student data in one step (School → Privacy).</li>
+<li><b>Exports</b> are de-identified by default; named exports are limited to teachers and school admins and are logged.</li></ul>
+
+<h2>6. How long we keep it (our data retention policy)</h2>
+<div class="table-wrap"><table class="t"><tr><th>Data</th><th>Kept for</th></tr>
+{% for what, how in retention %}<tr><td>{{ what }}</td><td>{{ how }}</td></tr>{% endfor %}</table></div>
+<p>We never keep student information longer than the lesson or the school needs it. When a school asks in writing, we delete its student data within 30 days.</p>
+
+<h2>7. How we protect it</h2>
+<ul><li>A written information security program with a named owner, a yearly risk assessment and a yearly review, following the NIST Cybersecurity Framework.</li>
+<li>HTTPS for every page; data encrypted at rest in the hosted database; data stored in the United States.</li>
+<li>Role-based access, hashed passwords and picture passwords, and an activity log of sign-ins, exports, deletions and support access.</li></ul>
+<p><b>If something goes wrong:</b> if we learn that someone got into student data without permission, we tell the school's contact in writing within 72 hours of confirming it, and in any case within the time the school's state law sets. We help the school notify families.</p>
+
+<h2>8. Companies that help us run the service</h2>
+<p>Render Services, Inc. hosts the website and its database in the United States. It has agreed in writing to protect the data at least as well as we do. We tell schools 30 days before adding a company that can reach student data.</p>
+<p>Some lessons use free tools the school opens itself: <b>Teachable Machine</b> (lesson 2.2) runs in the student's browser and sends nothing to us; <b>Arduino Cloud</b> (Arduino UNO R4 activities) is the school's own account with Arduino. Use photos of leaves only, never of people.</p>
+
+<h2>9. State laws</h2>
+<p>We sign the Student Data Privacy Consortium's National Data Privacy Agreement (NDPA) or a state alliance version, and state addenda such as California's (Education Code 49073.1 and SOPIPA), New York's (Education Law 2-d, with the school's Parents' Bill of Rights), Illinois's (SOPPA) and Missouri's (Student Data Accessibility, Transparency and Accountability Act).</p>
+
+<h2>10. Changes</h2>
+<p>We post changes here with a new version number and tell schools by email at least 30 days before a change that affects student data. A change never lets us use data already collected in a less protective way without the school's agreement.</p>
+
+<h2>11. Contact</h2>
+<p>Privacy questions, requests and agreements: <a href="mailto:{{ config.SUPPORT_EMAIL }}">{{ config.SUPPORT_EMAIL }}</a>. Districts: read the <a href="{{ url_for('public.agreement') }}">key terms of our agreement</a>.</p>
 </div></div>
 {% endblock %}

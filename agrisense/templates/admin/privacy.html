@@ -7,9 +7,11 @@
   <div class="card"><h2>Student data privacy agreement</h2>
     {% set st = dpa.status if dpa else 'not_started' %}
     <p>Status: <span class="pill {{ 'ok' if st in ('signed','countersigned') else 'warn' }}">{{ st.replace('_',' ') }}</span>{% if dpa and dpa.signed_by %} · signed by {{ dpa.signed_by }} on {{ dpa.signed_at[:10] }}{% endif %}</p>
-    <p class="muted">Version 2026.1 covers what we collect, who can see it, retention, deletion on request and breach notice.</p>
-    {% if allowed('privacy.manage', school_id=school.id) and st not in ('signed','countersigned') %}
-    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="sign"><label class="check"><input type="checkbox" required> I'm authorised to sign for {{ school.name }}.</label><button class="btn primary" style="margin-top:10px">Sign agreement</button></form>{% endif %}
+    <p class="muted">Version {{ version }} covers what we collect, who can see it, retention, deletion on request and breach notice.
+      <a href="{{ url_for('public.agreement') }}">Read the key terms</a>. Prefer your district's NDPA? Email {{ config.SUPPORT_EMAIL }} and we sign yours.</p>
+    {% if dpa and dpa.version and dpa.version != version and dpa.status in ('signed','countersigned') %}<p><span class="pill warn">Signed version {{ dpa.version }}</span> A newer version is available; signing again updates it.</p>{% endif %}
+    {% if allowed('privacy.manage', school_id=school.id) and (st not in ('signed','countersigned') or (dpa and dpa.version != version)) %}
+    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="sign"><label class="check"><input type="checkbox" required> I'm authorized to sign for {{ school.name }}.</label><button class="btn primary" style="margin-top:10px">Sign agreement</button></form>{% endif %}
   </div>
   <div class="card"><h2>AgriSense support access</h2>
     <p class="muted">Support can't see your school unless you allow it here, for one ticket and a set time. Every view is in your activity log.</p>
@@ -21,6 +23,26 @@
       <div><label for="tk">Ticket number</label><input id="tk" name="ticket" required></div>
       <div><label for="hr">For</label><select id="hr" name="hours"><option value="4">4 hours</option><option value="24" selected>24 hours</option><option value="72">3 days</option></select></div>
       <div><button class="btn">Allow support</button></div></form>{% endif %}
+  </div>
+</div>
+<div class="grid g2" style="margin-top:16px">
+  <div class="card"><h2>Keep student data to a minimum</h2>
+    <p>Student names are stored as: <b>{{ modes[mode] }}</b></p>
+    <p class="muted">Students never have an email, birthday or address here. In minimal-data mode they appear only as codes (Student 01, Student 02 …); the teacher keeps the list of who is who on paper or in the school's own system.</p>
+    {% if can_manage and mode != 'code' %}
+    <form method="post">{{ csrf() }}<input type="hidden" name="do" value="codes">
+      <label class="check"><input type="checkbox" required> Replace every student name in {{ school.name }} with a code. This can't be undone.</label>
+      <button class="btn" style="margin-top:10px">Turn on minimal-data mode</button></form>
+    {% elif mode == 'code' %}<p><span class="pill ok">Minimal-data mode is on</span></p>{% endif %}
+  </div>
+  <div class="card"><h2>Delete a class's student data</h2>
+    <p class="muted">For the end of a course. Removes the class's students, journals, observations, dashboards, rules and AI Lab work, and the reasons typed on pump requests. Keeps the class, its teams, trays and sensor readings.</p>
+    {% if can_manage and classes %}
+    <form method="post" class="fields">{{ csrf() }}<input type="hidden" name="do" value="delete_class">
+      <div><label for="dc">Class</label><select id="dc" name="class_id">{% for c in classes %}<option value="{{ c.id }}">{{ c.name }} ({{ c.students }} students)</option>{% endfor %}</select></div>
+      <div><label for="cf">Type the class name to confirm</label><input id="cf" name="confirm" required autocomplete="off"></div>
+      <div><button class="btn danger">Delete student data</button></div></form>
+    {% elif not classes %}<p class="muted">No classes yet.</p>{% endif %}
   </div>
 </div>
 {% endblock %}

@@ -1,0 +1,39 @@
+{% extends "base.html" %}{% block title %}Standards alignment{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">For curriculum and purchasing reviews</div><h1>Standards alignment</h1>
+  <p class="muted" style="margin:0">Every AgriSense Lab lesson mapped to NGSS, the CSTA K–12 Computer Science Standards and the National AFNR Career Cluster Content Standards (Power, Structural &amp; Technical Systems pathway, plus Plant Systems and Environmental Service Systems).</p></div>
+  <button class="btn no-print" type="button" data-print>Print</button></div>
+
+<div class="card"><h2>By lesson</h2>
+<div class="table-wrap"><table class="t">
+<tr><th>Lesson</th><th>NGSS performance expectations</th><th>NGSS practices (SEP) and crosscutting concepts (CCC)</th><th>CSTA</th><th>AFNR</th></tr>
+{% for l in lessons if l.code in S.MAP %}{% set m = S.MAP[l.code] %}
+<tr><td><b>{{ l.code }}</b> {{ l.title }}<br><small class="muted">{{ l.duration }}</small></td>
+  <td>{% for c, level in m.ngss %}<span class="mono">{{ c }}</span> <small class="muted">{{ level }}</small><br>{% endfor %}</td>
+  <td><small>SEP {{ m.sep|join(', ') }} · CCC {{ m.ccc|join(', ') }}{% if m.ai4k12 %}<br>AI4K12 Big Idea {{ m.ai4k12|join(', ') }}{% endif %}</small></td>
+  <td>{% for c in m.csta %}<span class="mono">{{ c }}</span><br>{% endfor %}</td>
+  <td>{% for c in m.afnr %}<span class="mono">{{ c }}</span><br>{% else %}<small class="muted">—</small>{% endfor %}</td></tr>
+{% endfor %}</table></div>
+<p class="hint">"Primary" means the lesson's activities and assessment address the performance expectation; "supports" means it builds toward it. Self-assessed by AgriSense Hub; check against your state's adopted standards.</p></div>
+
+<div class="grid g2" style="margin-top:16px">
+<div class="card"><h2>NGSS</h2>
+  {% for c, text in S.NGSS.items() %}<p style="margin:0 0 10px"><span class="mono"><b>{{ c }}</b></span> {{ text }}<br>
+    <small class="muted">Lessons: {% for l, level in cov.ngss.get(c, []) %}{{ l }}{{ ' (primary)' if level == 'primary' }}{{ ', ' if not loop.last }}{% endfor %}</small></p>{% endfor %}
+  <p class="hint">Practices: {% for n, t in S.SEP.items() %}SEP {{ n }} {{ t }}{{ '; ' if not loop.last }}{% endfor %}.</p>
+  <p class="hint">Crosscutting concepts: {% for n, t in S.CCC.items() %}CCC {{ n }} {{ t }}{{ '; ' if not loop.last }}{% endfor %}.</p>
+</div>
+<div class="card"><h2>AFNR Career Cluster Content Standards</h2>
+  {% for c, text in S.AFNR.items() %}<p style="margin:0 0 10px"><span class="mono"><b>{{ c }}</b></span> <small class="muted">{{ S.AFNR_PATHWAYS[c.split('.')[0]] }}</small><br>{{ text }}<br>
+    <small class="muted">Lessons: {% for l, _ in cov.afnr.get(c, []) %}{{ l }}{{ ', ' if not loop.last }}{% endfor %}</small></p>{% endfor %}
+  <p class="hint">2015 National AFNR Career Cluster Content Standards (National Council for Agricultural Education).</p>
+</div>
+</div>
+
+<div class="card" style="margin-top:16px"><h2>CSTA K–12 Computer Science Standards</h2>
+  <div class="table-wrap"><table class="t"><tr><th>Code</th><th>Standard</th><th>Lessons</th></tr>
+  {% for c, text in S.CSTA.items() %}<tr><td class="mono">{{ c }}</td><td>{{ text }}</td><td>{% for l, _ in cov.csta.get(c, []) %}{{ l }}{{ ', ' if not loop.last }}{% endfor %}</td></tr>{% endfor %}
+  </table></div>
+  <p class="hint">Codes are from the 2017 CSTA standards, which most states adopted. CSTA released revised standards in 2026; AgriSense Lab also fits their Data &amp; Analysis and Systems &amp; Security concepts and the Physical Computing, Data Science and Artificial Intelligence specialty areas.</p>
+</div>
+{% endblock %}

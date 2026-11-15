@@ -4,6 +4,7 @@ from flask import Blueprint, g, redirect, render_template, request, session, url
 from .. import auth
 from ..db import jdump, new_id, now
 from ..rbac import home_for
+from ..services import privacy as PRIV
 from .util import db, err, ok
 
 bp = Blueprint("public", __name__)
@@ -121,7 +122,7 @@ def signup():
         plan = d.val("SELECT id FROM plans WHERE code = 'pilot'")
         if plan:
             d.insert("subscriptions", id=new_id("sub"), org_id=org, plan_id=plan, licences=1, status="trial", created_at=now())
-        d.insert("privacy_agreements", id=new_id("dpa"), org_id=org, version="2026.1", status="not_started")
+        d.insert("privacy_agreements", id=new_id("dpa"), org_id=org, version=PRIV.DPA_VERSION, status="not_started")
         u = d.one("SELECT * FROM users WHERE id = ?", uid)
         auth.login_user(u)
         ok("Your school is ready. Next: register your kit and create a class.")
@@ -131,7 +132,21 @@ def signup():
 
 @bp.route("/privacy")
 def privacy():
-    return render_template("public/privacy.html")
+    return render_template("public/privacy.html", schedule=PRIV.DATA_SCHEDULE, retention=PRIV.RETENTION, version=PRIV.DPA_VERSION)
+
+
+@bp.route("/standards")
+def standards():
+    """Public standards alignment: NGSS, CSTA and AFNR for every lesson, for purchasing and curriculum reviews."""
+    from ..services import standards as S
+    lessons = db().q("SELECT code, title, duration FROM lessons ORDER BY code")
+    return render_template("public/standards.html", S=S, lessons=lessons, cov=S.coverage())
+
+
+@bp.route("/privacy/agreement")
+def agreement():
+    """The key terms of the Student Data Privacy Agreement, for districts to read before signing."""
+    return render_template("public/agreement.html", schedule=PRIV.DATA_SCHEDULE, retention=PRIV.RETENTION, version=PRIV.DPA_VERSION)
 
 
 @bp.route("/account", methods=["GET", "POST"])

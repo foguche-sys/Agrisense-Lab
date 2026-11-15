@@ -7,6 +7,7 @@ from .. import auth
 from ..db import ahead, jdump, jload, new_id, now
 from ..rbac import ASSIGNABLE_BY, ROLES, can
 from ..services import feeds as F
+from ..services import privacy as P
 from ..services.audit import log
 from ..services.safety import school_settings
 from .util import class_code, db, err, need, ok, pick_school
@@ -346,12 +347,16 @@ def settings():
         s["class_hours_only"] = f.get("class_hours_only") == "1"
         s["class_hours"] = [f.get("hours_from") or "07:00", f.get("hours_to") or "16:30"]
         s["parents_enabled"] = f.get("parents_enabled") == "1"
+        from ..services.privacy import NAME_MODES
+        if f.get("student_names") in NAME_MODES:
+            s["student_names"] = f["student_names"]
         d.update("schools", school["id"], settings=jdump(s), timezone=f.get("timezone") or school["timezone"])
         log(d, "school.settings", jdump(s), school_id=school["id"])
         ok("Settings saved.")
         return redirect(url_for("admin.settings", school=school["id"]))
     s.setdefault("retention_days", 365)
-    return render_template("admin/settings.html", school=school, s=s)
+    from ..services.privacy import NAME_MODES, name_mode
+    return render_template("admin/settings.html", school=school, s=s, name_modes=NAME_MODES, name_mode=name_mode(s))
 
 
 @bp.route("/privacy", methods=["GET", "POST"])
@@ -361,15 +366,17 @@ def privacy():
     if not (auth.allowed("privacy.manage", school_id=school["id"]) or auth.allowed("privacy.request", school_id=school["id"])):
         abort(403)
     dpa = d.one("SELECT * FROM privacy_agreements WHERE org_id = ?", school["org_id"])
+    # names to codes and class deletion: the school's privacy lead, or a school admin who manages its people
+    can_minimize = auth.allowed("privacy.manage", school_id=school["id"]) or auth.allowed("people.manage", school_id=school["id"])
     if request.method == "POST":
         if request.form.get("do") == "sign":
             need("privacy.manage", school_id=school["id"])
             if not dpa:
-                d.insert("privacy_agreements", id=new_id("dpa"), org_id=school["org_id"], version="2026.1", status="signed",
+                d.insert("privacy_agreements", id=new_id("dpa"), org_id=school["org_id"], version=P.DPA_VERSION, status="signed",
                          signed_by=g.user["name"], signed_at=now())
             else:
-                d.update("privacy_agreements", dpa["id"], status="signed", signed_by=g.user["name"], signed_at=now())
-            log(d, "privacy.sign", "DPA 2026.1", school_id=school["id"])
+                d.update("privacy_agreements", dpa["id"], status="signed", version=P.DPA_VERSION, signed_by=g.user["name"], signed_at=now())
+            log(d, "privacy.sign", "DPA " + P.DPA_VERSION, school_id=school["id"])
             ok("Agreement signed. AgriSense Hub will countersign and email a copy.")
         elif request.form.get("do") == "support":
             need("privacy.manage", school_id=school["id"]) if not auth.allowed("people.manage", school_id=school["id"]) else None
@@ -377,12 +384,37 @@ def privacy():
                      granted_by=g.user["id"], expires_at=ahead(hours=int(request.form.get("hours") or 24)), created_at=now())
             log(d, "support.grant", request.form.get("ticket", ""), school_id=school["id"])
             ok("Support can see your school for the time you chose. You can end it any time.")
+        elif request.form.get("do") == "codes":
+            if not can_minimize:
+                abort(403)
+            st = school_settings(d, school["id"])
+            st["student_names"] = "code"
+            d.update("schools", school["id"], settings=jdump(st))
+            n = P.codes_for_school(d, school["id"])
+            log(d, "privacy.codes", f"{n} student names replaced with codes", school_id=school["id"])
+            ok(f"Minimal-data mode is on. {n} student names were replaced with codes, and new students get codes too.")
+        elif request.form.get("do") == "delete_class":
+            if not can_minimize:
+                abort(403)
+            cls = d.one("SELECT * FROM classes WHERE id = ? AND school_id = ?", request.form.get("class_id"), school["id"])
+            if not cls:
+                abort(404)
+            if (request.form.get("confirm") or "").strip().lower() != cls["name"].strip().lower():
+                err(f"Type the class name exactly (\"{cls['name']}\") to confirm. Nothing was deleted.")
+            else:
+                c = P.delete_class_student_data(d, cls["id"])
+                log(d, "privacy.delete_class", f"{cls['name']}: {c['students']} students, {c.get('journals', 0)} journals", school_id=school["id"])
+                ok(f"Deleted the student data of {cls['name']}: {c['students']} students and their work. Sensor readings were kept.")
         elif request.form.get("do") == "end_support":
             d.run("UPDATE support_access SET expires_at = ? WHERE school_id = ? AND expires_at > ?", now(), school["id"], now())
             ok("Support access ended.")
         return redirect(url_for("admin.privacy", school=school["id"]))
     grants = d.q("SELECT * FROM support_access WHERE school_id = ? ORDER BY created_at DESC LIMIT 10", school["id"])
-    return render_template("admin/privacy.html", school=school, dpa=dpa, grants=grants, nowts=now())
+    classes = d.q("SELECT c.id, c.name, (SELECT COUNT(*) FROM memberships m WHERE m.class_id = c.id AND m.role = 'student') AS students "
+                  "FROM classes c WHERE c.school_id = ? ORDER BY c.name", school["id"])
+    return render_template("admin/privacy.html", school=school, dpa=dpa, grants=grants, nowts=now(), classes=classes,
+                           mode=P.name_mode(school_settings(d, school["id"])), modes=P.NAME_MODES, version=P.DPA_VERSION,
+                           can_manage=can_minimize)
 
 
 @bp.route("/billing", methods=["GET", "POST"])
@@ -433,9 +465,9 @@ def add_students():
     teams = d.q("SELECT * FROM teams WHERE class_id = ? ORDER BY name", cls["id"])
     cards = []
     count = d.val("SELECT COUNT(*) AS n FROM memberships WHERE class_id = ? AND role = 'student'", cls["id"])
+    mode = P.name_mode(school_settings(d, cls["school_id"]))
     for i, nm in enumerate(names):
-        parts = nm.split()
-        short = parts[0] + (f" {parts[-1][0]}." if len(parts) > 1 else "")    # first name + last initial only
+        short = P.display_name(nm, mode, count + i + 1)       # first name + last initial, or a code: never the full name
         uid = auth.create_user(d, short)
         pics = secrets.SystemRandom().sample(auth.PICTURES, 2)
         d.update("users", uid, picture_hash=auth.picture_hash(pics, uid))
