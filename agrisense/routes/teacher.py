@@ -213,6 +213,7 @@ def teams(cid):
             for r in rows:
                 pics = secrets.SystemRandom().sample(auth.PICTURES, 2)
                 d.update("users", r["user_id"], picture_hash=auth.picture_hash(pics, r["user_id"]))
+                auth.unlock(d, r["user_id"])
                 cards.append({"name": r["name"], "pics": pics, "team": teams.get(r["team_id"], "")})
             log(d, "students.new_pictures", f"{len(cards)} in {cls['name']}", school_id=cls["school_id"])
             return render_template("admin/cards.html", cls=cls, cards=cards, reprint=True)
@@ -222,6 +223,12 @@ def teams(cid):
             if tray and f.get("crop") in CROPS:
                 d.update("trays", tray["id"], crop=f["crop"])
                 ok(f"Tray {tray['letter']} is now growing {CROPS[f['crop']][0].lower()}. The advisor uses its watering needs.")
+        elif act == "unlock":
+            m = d.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", f.get("user_id"), cid)
+            if m:
+                auth.unlock(d, m["user_id"])
+                log(d, "student.unlock", m["user_id"], school_id=cls["school_id"])
+                ok("Unlocked. They can sign in with their pictures again.")
         elif act == "remove":
             m = d.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", f.get("user_id"), cid)
             if m:
@@ -231,8 +238,8 @@ def teams(cid):
                 ok("Student removed from the class.")
         return redirect(url_for("teacher.teams", cid=cid))
     teams_ = d.q("SELECT t.*, tr.letter, tr.label FROM teams t LEFT JOIN trays tr ON tr.id = t.tray_id WHERE t.class_id = ? ORDER BY t.name", cid)
-    students = d.q("SELECT u.id, u.name, u.last_login, m.team_id FROM memberships m JOIN users u ON u.id = m.user_id "
+    students = d.q("SELECT u.id, u.name, u.last_login, u.locked_until, m.team_id FROM memberships m JOIN users u ON u.id = m.user_id "
                    "WHERE m.class_id = ? AND m.role = 'student' ORDER BY u.name", cid)
     trays = d.q("SELECT * FROM trays WHERE kit_id = ? ORDER BY letter", cls["kit_id"]) if cls["kit_id"] else []
     from ..services.agronomy import CROPS
-    return render_template("teacher/teams.html", cls=cls, teams=teams_, students=students, trays=trays, crops=CROPS)
+    return render_template("teacher/teams.html", cls=cls, teams=teams_, students=students, trays=trays, crops=CROPS, nowts=now())

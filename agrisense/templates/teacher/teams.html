@@ -14,7 +14,8 @@
       <select name="tray_id" style="width:auto">{% for tr in trays %}<option value="{{ tr.id }}" {{ 'selected' if t.tray_id == tr.id }}>Tray {{ tr.letter }} · {{ tr.label }}</option>{% endfor %}</select><button class="btn small">Set tray</button></form>
     {% else %}<p class="muted">Tray {{ t.letter or '—' }}</p>{% endif %}
     {% for s in students if s.team_id == t.id %}
-    <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line-2)"><span>{{ s.name }} <small class="faint">{{ s.last_login|ago }}</small></span>
+    <div class="row between" style="padding:6px 0;border-bottom:1px solid var(--line-2)"><span>{{ s.name }} <small class="faint">{{ s.last_login|ago }}</small>{% if s.locked_until and s.locked_until > nowts %} <span class="pill warn">Locked</span>{% endif %}</span>
+      {% if manage and s.locked_until and s.locked_until > nowts %}<form method="post">{{ csrf() }}<input type="hidden" name="do" value="unlock"><input type="hidden" name="user_id" value="{{ s.id }}"><button class="btn small primary">Unlock</button></form>{% endif %}
       {% if manage %}<details><summary class="btn small">Manage</summary><div class="stack" style="padding:8px 0">
         <form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="move"><input type="hidden" name="user_id" value="{{ s.id }}"><select name="team_id" style="width:auto">{% for t2 in teams %}<option value="{{ t2.id }}" {{ 'selected' if t2.id == t.id }}>{{ t2.name }}</option>{% endfor %}</select><button class="btn small">Move</button></form>
         <form method="post">{{ csrf() }}<input type="hidden" name="do" value="reset_pics"><input type="hidden" name="user_id" value="{{ s.id }}"><button class="btn small">New pictures + card</button></form>

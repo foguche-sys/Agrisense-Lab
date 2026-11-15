@@ -31,7 +31,9 @@ CREATE TABLE IF NOT EXISTS users (
   is_active INTEGER NOT NULL DEFAULT 1,
   must_change_password INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL,
-  last_login TEXT
+  last_login TEXT,
+  failed_logins INTEGER NOT NULL DEFAULT 0,   -- wrong sign-in tries in a row
+  locked_until TEXT                       -- set after too many wrong tries (auth.LOCKOUT)
 );
 
 CREATE TABLE IF NOT EXISTS memberships (

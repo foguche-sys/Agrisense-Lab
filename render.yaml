@@ -27,6 +27,8 @@ services:
         generateValue: true
       - key: SESSION_COOKIE_SECURE
         value: "1"
+      - key: TRUST_PROXY             # one proxy hop (Render) in front of the app: sign-in limits see the real user address
+        value: "1"
       - key: FLASK_ENV
         value: production
       - key: OWNER_EMAIL

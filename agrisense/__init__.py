@@ -26,6 +26,11 @@ def create_app(test_config=None):
     )
     if test_config:
         app.config.update(test_config)
+    # Behind Render's proxy every request comes from the proxy's address. Trust exactly one proxy hop so
+    # request.remote_addr is the user's own address (sign-in limits) and HTTPS is detected. Render sets RENDER=true.
+    if app.config.get("TRUST_PROXY", os.environ.get("TRUST_PROXY") == "1" or os.environ.get("RENDER") == "true"):
+        from werkzeug.middleware.proxy_fix import ProxyFix
+        app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1)
     if app.config["SECRET_KEY"] == "dev-only-change-me" and os.environ.get("FLASK_ENV") == "production":
         raise RuntimeError("Set SECRET_KEY in production.")
 

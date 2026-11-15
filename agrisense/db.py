@@ -69,6 +69,8 @@ class Database:
         ("pump_requests", "prediction", "REAL"),
         ("pump_requests", "moisture_after", "REAL"),
         ("pump_requests", "checked_at", "TEXT"),
+        ("users", "failed_logins", "INTEGER NOT NULL DEFAULT 0"),
+        ("users", "locked_until", "TEXT"),
     ]
 
     def init_schema(self):

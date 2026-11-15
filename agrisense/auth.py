@@ -12,10 +12,16 @@ import time
 from flask import abort, current_app, g, redirect, request, session, url_for
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from .db import get_db, new_id, now
+from .db import ahead, get_db, new_id, now
 from .rbac import can, load_memberships
 
-PICTURES = ["Corn", "Bee", "Tractor", "Rain", "Sun", "Seed", "Cow", "Leaf"]
+# 16 pictures = 120 possible pairs (was 8 = 28). The first 8 keep their names, so cards already printed still work.
+PICTURES = ["Corn", "Bee", "Tractor", "Rain", "Sun", "Seed", "Cow", "Leaf",
+            "Apple", "Fish", "Tree", "Moon", "Star", "Carrot", "Pig", "Hen"]
+
+# Per-account lockout, kept in the database so it works across workers and restarts:
+# (wrong tries before locking, minutes locked). A teacher can unlock a student straight away.
+LOCKOUT = {"student": (5, 15), "staff": (10, 15)}
 
 _attempts = {}   # ip -> [timestamps]; simple brute-force guard (per process)
 
@@ -130,23 +136,60 @@ def add_membership(db, user_id, role, org_id=None, school_id=None, class_id=None
     return mid
 
 
+def is_locked(u):
+    return bool(u and u.get("locked_until") and u["locked_until"] > now())
+
+
+def _failed(db, u, kind):
+    """Count a wrong try against this account; lock it after too many."""
+    limit, minutes = LOCKOUT[kind]
+    n = (u.get("failed_logins") or 0) + 1
+    if n >= limit:
+        db.update("users", u["id"], failed_logins=0, locked_until=ahead(minutes=minutes))
+        from .services.audit import log
+        log(db, "signin.locked", f"{kind} account locked for {minutes} min after {n} wrong tries", user_id=u["id"])
+    else:
+        db.update("users", u["id"], failed_logins=n)
+    db.commit()
+
+
+def _cleared(db, u):
+    if u.get("failed_logins") or u.get("locked_until"):
+        db.update("users", u["id"], failed_logins=0, locked_until=None)
+
+
+def unlock(db, user_id):
+    db.update("users", user_id, failed_logins=0, locked_until=None)
+
+
 def check_staff_login(email, password):
+    """Returns (user, None) on success, else (None, "wrong" | "locked")."""
     db = get_db()
     u = db.one("SELECT * FROM users WHERE email = ? AND is_active = 1", (email or "").lower().strip())
+    if u and is_locked(u):
+        return None, "locked"
     if u and u["password_hash"] and check_password_hash(u["password_hash"], password or ""):
-        return u
-    return None
+        _cleared(db, u)
+        return u, None
+    if u:
+        _failed(db, u, "staff")
+    return None, "wrong"
 
 
 def check_student_login(class_code, user_id, pics):
     db = get_db()
     cls = db.one("SELECT * FROM classes WHERE code = ?", (class_code or "").upper().strip())
     if not cls:
-        return None
+        return None, "wrong"
     m = db.one("SELECT * FROM memberships WHERE user_id = ? AND class_id = ? AND role = 'student'", user_id, cls["id"])
     if not m:
-        return None
+        return None, "wrong"
     u = db.one("SELECT * FROM users WHERE id = ? AND is_active = 1", user_id)
+    if u and is_locked(u):
+        return None, "locked"
     if u and u["picture_hash"] and len(pics) == 2 and hmac.compare_digest(u["picture_hash"], picture_hash(pics, user_id)):
-        return u
-    return None
+        _cleared(db, u)
+        return u, None
+    if u:
+        _failed(db, u, "student")
+    return None, "wrong"

@@ -44,13 +44,14 @@ def quote():
 @bp.route("/login", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
-        if auth.throttle(request.remote_addr or "?"):
+        if auth.throttle(request.remote_addr or "?", limit=20):
             err("Too many tries. Wait 5 minutes and try again.")
             return render_template("public/login.html"), 429
-        u = auth.check_staff_login(request.form.get("email"), request.form.get("password"))
+        u, why = auth.check_staff_login(request.form.get("email"), request.form.get("password"))
         if not u:
             auth.failed_attempt(request.remote_addr or "?")
-            err("That email and password don't match.")
+            err("Too many wrong tries for this account. Wait 15 minutes, or ask your school admin." if why == "locked"
+                else "That email and password don't match.")
             return render_template("public/login.html", email=request.form.get("email", "")), 401
         auth.login_user(u)
         nxt = request.args.get("next")
@@ -74,11 +75,14 @@ def student_code():
                       "ORDER BY u.name", cls["id"])
     uid = request.values.get("uid")
     if uid and request.method == "POST" and request.form.get("pics"):
-        if auth.throttle(request.remote_addr or "?", limit=20):
+        if auth.throttle(request.remote_addr or "?", limit=60):       # a whole class shares one school address
             err("Too many tries. Ask your teacher.")
             return render_template("public/student_code.html", code=code), 429
         pics = request.form.get("pics").split(",")
-        u = auth.check_student_login(code, uid, pics)
+        u, why = auth.check_student_login(code, uid, pics)
+        if why == "locked":
+            err("Too many wrong pictures. Ask your teacher to unlock you.")
+            return render_template("public/student_code.html", code=code), 423
         if u:
             auth.login_user(u)
             return redirect(url_for("student.home"))
