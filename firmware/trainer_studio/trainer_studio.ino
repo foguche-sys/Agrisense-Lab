@@ -8,6 +8,8 @@
     Tank level   MCP23017 pin 13, INPUT_PULLUP (float closed = OK)
     Relay 1 pump MCP23017 pin 11      Relay 2 fan  MCP23017 pin 12      Buzzer MCP pin 10
     Servo vent   PCA9685 ch0          AIR pod AHT20 0x38 (Qwiic)
+    Knobs        ADS1115 A0 (knob 1) and A1 (knob 2), 0-3.3 V -> 0-100 %
+    Motor        TB6612: PWMA = PCA9685 ch1, AIN1/AIN2 = MCP23017 pins 14/15, motor on load jacks L3
     Grow light   PCA9685 ch2 -> logic-level MOSFET module gate -> 12 V LED strip on load jacks L4 (white)
                  (PCA runs at 50 Hz for the servo, so dimming below ~30 % can flicker to the eye; plants don't mind)
 
@@ -34,8 +36,11 @@
 #include "secrets.h"
 #include "agrisense_protocol.h"
 
-#define FW_VERSION "trainer-1.2.0"
+#define FW_VERSION "trainer-1.3.0"
 #define PCA_GROW 2
+#define PCA_MOTOR 1
+#define MCP_AIN1 14
+#define MCP_AIN2 15
 #define RS485_TX 4
 #define RS485_RX 40
 #define RS485_DE 41
@@ -63,6 +68,8 @@ uint32_t pumpStart = 0, pumpStopAt = 0, pumpOffAt = 0, fanStopAt = 0, buzzerStop
 String pendingEvent = "";
 int ventDeg = 90;
 int growPct = 0;
+int motorVal = 0;                                 // -100..100
+float knob1 = 0, knob2 = 0;
 
 // ---------- cached sensor readings (probe read every 2 s; shared by the website post and the STUDENT port) ----------
 bool probeOk = false; float sMoist = 0, sTemp = 0, sEc = 0, sPh = 0, sAirT = 0, sHum = 0, sLux = 0;
@@ -141,9 +148,17 @@ void setGrow(int pct) {                            // 0-100 % -> PCA9685 duty on
   else pca.setPWM(PCA_GROW, 0, map(growPct, 0, 100, 0, 4095));
 }
 
+void setMotor(int v) {                             // -100..100: sign = direction, size = speed (lesson 3.5)
+  motorVal = constrain(v, -100, 100);
+  mcp.digitalWrite(MCP_AIN1, motorVal > 0);
+  mcp.digitalWrite(MCP_AIN2, motorVal < 0);
+  if (motorVal == 0) pca.setPWM(PCA_MOTOR, 0, 4096);  // fully off
+  else pca.setPWM(PCA_MOTOR, 0, map(abs(motorVal), 0, 100, 0, 4095));
+}
+
 void applyCommand(const String &cmd) {            // "SET,pump,ON,30" | "SET,vent,120" | "STOP" | "RESTART"
   Serial.println("cmd " + cmd);
-  if (cmd == "STOP") { pumpOff("STOP"); fanOn = false; mcp.digitalWrite(MCP_FAN, LOW); setGrow(0); return; }
+  if (cmd == "STOP") { pumpOff("STOP"); fanOn = false; mcp.digitalWrite(MCP_FAN, LOW); setGrow(0); setMotor(0); return; }
   if (cmd == "RESTART") { ESP.restart(); }
   if (!cmd.startsWith("SET,")) return;
   int a = cmd.indexOf(',', 4), b = cmd.indexOf(',', a + 1);
@@ -154,6 +169,7 @@ void applyCommand(const String &cmd) {            // "SET,pump,ON,30" | "SET,ven
   else if (comp == "buzzer") { bool on = val == "ON"; mcp.digitalWrite(MCP_BUZZER, on); buzzerStopAt = on ? millis() + (secs ? secs : 2) * 1000UL : 0; }
   else if (comp == "vent") setVent(val.toInt());
   else if (comp == "growlight") setGrow(val == "ON" ? 100 : val == "OFF" ? 0 : val.toInt());
+  else if (comp == "motor") setMotor(val == "OFF" ? 0 : val.toInt());
   else if (comp == "ledbar") { int n = constrain(val.toInt(), 0, 10); for (int i = 0; i < 10; i++) mcp.digitalWrite(i, i < n); }
 }
 
@@ -178,6 +194,8 @@ void readSensors() {
   airOk = false;
   if (haveAht) { sensors_event_t h, tp; if (aht.getEvent(&h, &tp)) { sAirT = tp.temperature; sHum = h.relative_humidity; airOk = true; } }
   float lux; luxOk = haveLux && readLux(lux); if (luxOk) sLux = lux;
+  knob1 = constrain(ads.computeVolts(ads.readADC_SingleEnded(0)) / 3.3f * 100.0f, 0.0f, 100.0f);
+  knob2 = constrain(ads.computeVolts(ads.readADC_SingleEnded(1)) / 3.3f * 100.0f, 0.0f, 100.0f);
   lastSensorRead = millis();
 }
 
@@ -261,6 +279,9 @@ void postFeeds() {
   f["fan"] = fanOn ? "ON" : "OFF";
   f["vent"] = ventDeg;
   f["growlight"] = growPct;
+  f["motor"] = motorVal;
+  f["knob-1"] = round(knob1);
+  f["knob-2"] = round(knob2);
   if (pendingEvent.length()) doc["event"] = pendingEvent;
   if (studentEvent.length()) doc["student_event"] = studentEvent;
   String body; serializeJson(doc, body);
@@ -300,7 +321,7 @@ void setup() {
   for (int i = 0; i <= 12; i++) { mcp.pinMode(i, OUTPUT); mcp.digitalWrite(i, LOW); }
   mcp.pinMode(14, OUTPUT); mcp.pinMode(15, OUTPUT);
   mcp.pinMode(MCP_LEVEL, INPUT_PULLUP);
-  pca.begin(); pca.setPWMFreq(50); setVent(ventDeg); setGrow(0);
+  pca.begin(); pca.setPWMFreq(50); setVent(ventDeg); setGrow(0); setMotor(0);
   haveLux = luxBegin();
   haveAht = aht.begin();
   studentBegin();

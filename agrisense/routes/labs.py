@@ -13,6 +13,11 @@ TOOLS = {  # where the work happens for each lab: (endpoint, label)
     "1.10": ("student.tray", "Open our tray"), "1.11": ("data.explorer", "Open the data"),
     "2.1": ("ai.predict", "Open AI Lab 2.1"), "2.2": ("ai.leaf", "Open AI Lab 2.2"), "2.3": ("ai.sensor", "Open AI Lab 2.3"),
     "2.4": ("ai.zones", "Open AI Lab 2.4"), "2.5": ("ai.decide", "Open AI Lab 2.5"),
+    "3.1": ("studio.dashboards", "Open the Field Studio"), "3.2": ("studio.dashboards", "Open the Field Studio"),
+    "3.3": ("studio.dashboards", "Open the Field Studio"), "3.4": ("studio.dashboards", "Open the Field Studio"),
+    "3.5": ("studio.dashboards", "Open the Field Studio"), "3.6": ("studio.dashboards", "Open the Field Studio"),
+    "4.1": ("data.explorer", "Open the data"), "4.2": ("student.tray", "Open our tray"), "4.3": ("ai.zones", "Open AI Lab zones"),
+    "4.4": ("data.explorer", "Open the data"),
 }
 
 

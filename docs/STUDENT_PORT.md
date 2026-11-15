@@ -3,7 +3,7 @@
 ## What runs where
 | Board | Sketch | What it does |
 | --- | --- | --- |
-| Trainer (Heltec V3) | `firmware/trainer_studio` (v1.2.0) | Trainer outputs and sensors; **STUDENT port** I2C target at 0x42 on GPIO 38/39 |
+| Trainer (Heltec V3) | `firmware/trainer_studio` (v1.3.0) | Trainer outputs and sensors (v1.3 adds the knobs and the motor for Lab 3); **STUDENT port** I2C target at 0x42 on GPIO 38/39 |
 | Student Arduino UNO R4 WiFi | `firmware/AgriSenseStudent` library + examples | Reads the Trainer, asks for pump runs (lesson 1.10) |
 | Build deck, node E (Heltec V3) | `firmware/build_deck_node` (v1.0.0) | Soil probe + pods on its screen; sends to the website over **Wi-Fi** (Starter) or LoRa to the gateway (Field add-on) |
 

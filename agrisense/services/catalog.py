@@ -43,6 +43,28 @@ LESSONS = [
     ("2.5", "Should AI decide when to water?", "activity", "Debate who should have the final say: the model, the advisor or the farmer. "
      "Use your class's own prediction errors as evidence.",
      "45 min", "ai", "AI4K12-5,SEP-7", ["Look at the evidence", "Take a side", "Debate", "Write your position"]),
+    # Unit 3: greenhouse climate and control (Starter kit: AIR and LIGHT pods, grow light, fan, vent, knobs, LED bar, buzzer, motor, pressure)
+    ("3.1", "Reading the air", "lab", "Measure air temperature and humidity, work out the vapour pressure deficit (VPD) and judge whether the air is good for plants.",
+     "45 min", "climate", "MS-LS1-5,SEP-3,SEP-5", ["Read the air", "Change the air", "Work out VPD", "Judge the air"]),
+    ("3.2", "Light for growth", "lab", "Measure light, work out the daily light integral (DLI) and set the grow light and hours to reach a target.",
+     "45 min", "climate", "MS-LS1-5,SEP-4,SEP-5", ["Measure the room", "Measure the grow light", "Work out daily light", "Plan the lighting"]),
+    ("3.3", "Keep the greenhouse cool", "lab", "Control the fan with a dead band (two rules), compare it with one rule, and decide when to use the vent.",
+     "45 min", "climate", "ETS1-3,SEP-2,SEP-6", ["Find set points", "One rule first", "Add the dead band", "Use the vent too"]),
+    ("3.4", "Alarms and displays", "activity", "Build an operator panel: knobs as set points, the LED bar as a gauge, and buzzer alarms that mean something.",
+     "45 min", "climate", "ETS1-2,SEP-6", ["Read the knobs", "Make a gauge", "Set the alarms", "Design the panel"]),
+    ("3.5", "Motors on the farm", "activity", "Drive the motor at different speeds and directions and use it to model a shade cloth that closes on bright days.",
+     "45 min", "climate", "ETS1-2,SEP-3", ["Speed and direction", "Time a shade cloth", "Plan the shade", "Link it to light"]),
+    ("3.6", "Is the irrigation healthy?", "lab", "Use pump pressure to tell a healthy line from a blocked or leaking one, and make a troubleshooting chart.",
+     "45 min", "trainer", "ETS1-3,SEP-3,SEP-4", ["Normal pressure", "Blocked line", "Leak", "Troubleshooting chart"]),
+    # Unit 4: precision farm decisions
+    ("4.1", "Water by the weather", "lab", "Find how temperature, humidity and light change how fast soil dries, then predict tomorrow's water need from a forecast.",
+     "2 × 45 min", "data", "HS-ESS3-4,SEP-4,SEP-5", ["Download", "Daily numbers", "Find the link", "Predict tomorrow"]),
+    ("4.2", "A virtual field trial", "lab", "Test three watering plans side by side in simulation mode, compare water used and crop stress, then check the winner on the real bench.",
+     "2 × 45 min", "sim", "ETS1-3,SEP-2,SEP-5", ["Choose the plans", "Run the trial", "Compare", "Check on the real bench"]),
+    ("4.3", "Map your field", "lab", "Map where your sensors are, colour the map by soil readings and draw management zones.",
+     "45 min", "map", "SEP-4,SEP-8", ["Collect positions", "Add the readings", "Colour the map", "Draw the zones"]),
+    ("4.4", "Variable-rate plan", "lab", "Write a watering plan with a different amount for each zone, and show the water and money it saves.",
+     "2 × 45 min", "data", "HS-ESS3-4,SEP-5,SEP-7", ["Uniform plan", "Variable-rate plan", "Savings", "Pitch it"]),
 ]
 
 KIT_NOTE = {  # what the optional Field add-on changes; every lesson runs on the Starter kit (or the Virtual plan, in simulation)
@@ -50,14 +72,17 @@ KIT_NOTE = {  # what the optional Field add-on changes; every lesson runs on the
     "1.11": "Field add-on: a full week of data for every tray",
     "2.1": "Field add-on: predict for any tray or field node",
     "2.4": "Field add-on: zones from your own field nodes",
+    "4.3": "Field add-on: map your own field nodes outdoors",
+    "4.4": "Field add-on: zones from a real field",
 }
-EQUIPMENT = {"bench": "Soil bench", "trainer": "Trainer board", "deck": "Build deck", "r4": "Student Arduino", "data": "Data", "ai": "AI Lab"}
+EQUIPMENT = {"bench": "Soil bench", "trainer": "Trainer board", "deck": "Build deck", "r4": "Student Arduino", "data": "Data", "ai": "AI Lab",
+             "climate": "Trainer + pods", "sim": "Simulation", "map": "Map"}
 
 RENUMBER_2026 = {"1.3": "1.7", "1.6": "1.3", "1.7": "1.8", "1.8": "1.9", "1.9": "1.11"}
 
 
 PLANS = [   # website licences (Nov 2026). Hardware kits are on /kits (services/kits.py).
-    ("pilot", "Pilot", 0, "Free website licence for one school for one semester: all 16 lessons, the AI Lab and the Field Studio. "
+    ("pilot", "Pilot", 0, "Free website licence for one school for one semester: all 26 lessons, the AI Lab and the Field Studio. "
                           "The kit is bought separately at pilot pricing (see Kits and pricing)."),
     ("virtual", "Virtual", 30000, "No hardware: every lesson in simulation mode, the AI Lab and the Field Studio, for one school."),
     ("school", "School", 30000, "Per kit per year, with a Starter kit: all lessons on real hardware, unlimited classes, data exports, support."),

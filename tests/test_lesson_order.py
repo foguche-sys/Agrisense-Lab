@@ -3,10 +3,11 @@ from agrisense.services import catalog as C
 from agrisense.services import lab_content as L
 from agrisense.services import standards as S
 
-ORDER = ["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", "1.11", "2.1", "2.2", "2.3", "2.4", "2.5"]
+ORDER = ["1.1", "1.2", "1.3", "1.4", "1.5", "1.6", "1.7", "1.8", "1.9", "1.10", "1.11", "2.1", "2.2", "2.3", "2.4", "2.5",
+         "3.1", "3.2", "3.3", "3.4", "3.5", "3.6", "4.1", "4.2", "4.3", "4.4"]
 
 
-def test_sixteen_lessons_in_starter_first_order(db):
+def test_lessons_in_starter_first_order(db):
     assert [r["code"] for r in db.q("SELECT code FROM lessons ORDER BY seq, code")] == ORDER
     assert [c for c, *_ in C.LESSONS] == ORDER and list(L.LABS) == ORDER and list(S.MAP) == ORDER
     assert db.val("SELECT title FROM lessons WHERE code = '1.6'") == "Build your own sensor node"
@@ -26,14 +27,14 @@ def test_old_numbering_moves_rows_with_their_content(db):
     C.seed_catalog(db)
     assert db.val("SELECT code FROM lessons WHERE id = ?", drying_id) == "1.7"
     assert db.val("SELECT title FROM lessons WHERE code = '1.3'") == "Build the Trainer pump loop"
-    assert db.val("SELECT COUNT(*) AS n FROM lessons") == 16
+    assert db.val("SELECT COUNT(*) AS n FROM lessons") == 26
 
 
 def test_new_lab_pages_and_sheets(client, db):
     login(client, "teacher")
-    for code in ("1.6", "1.10"):
+    for code in ("1.6", "1.10", "3.1", "3.3", "3.5", "4.2", "4.4"):
         page = client.get(f"/labs/{code}").get_data(as_text=True)
         assert L.LABS[code]["goal"][:30] in page
         assert "Claim, evidence, reasoning" in client.get(f"/labs/{code}/sheet").get_data(as_text=True)
     home = client.get("/").get_data(as_text=True)
-    assert "16 lessons" in home and "Build deck" in home and "Student Arduino" in home
+    assert "26 lessons" in home and "Build deck" in home and "Student Arduino" in home and "Simulation" in home

@@ -31,7 +31,8 @@ TRAINER_COMPONENTS = {
     "post-a1":  ("Coding post A1", "sensor", "V", "GPIO 7 · post 12"),
     "post-d1":  ("Coding post D1", "sensor", "HIGH/LOW", "GPIO 47 · post 14"),
 }
-DEFAULT_TRAINER = ["pump", "fan", "moisture", "air-temp", "pressure", "tank", "vent"]
+DEFAULT_TRAINER = ["pump", "fan", "moisture", "air-temp", "humidity", "light", "pressure", "tank", "vent", "growlight",
+                   "ledbar", "buzzer", "knob-1", "knob-2", "motor"]   # everything a Starter kit has (Labs 1 and 3)
 OUTPUTS = {k for k, v in TRAINER_COMPONENTS.items() if v[1] == "output"}
 
 
