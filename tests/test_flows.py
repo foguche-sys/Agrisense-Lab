@@ -292,10 +292,10 @@ def test_staff_can_decline_a_signup(client, db):
 
 
 def test_teacher_files_need_sign_in(client, db):
-    assert client.get("/static/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 404
-    assert client.get("/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 302      # to sign in
+    assert client.get("/static/downloads/AgriSense_Lab_Sheets.pdf").status_code == 404
+    assert client.get("/downloads/AgriSense_Lab_Sheets.pdf").status_code == 302      # to sign in
     login_student(client, db)
-    assert client.get("/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 403
+    assert client.get("/downloads/AgriSense_Lab_Sheets.pdf").status_code == 403
 
 
 def test_inventory_and_invoice(client, db):

@@ -3,7 +3,7 @@
 {% block body %}
 <div class="page-head"><div><div class="eyebrow">{{ cls.name }}</div><h1>Lessons</h1></div></div>
 {{ teach_tabs(cls, 'lessons') }}
-<div class="row" style="margin-bottom:16px;gap:8px"><a class="btn" href="{{ url_for('public.download', name='AgriSense_Lab_Sheets_All_14.pdf') }}" download>Download all 14 lab sheets (PDF)</a>
+<div class="row" style="margin-bottom:16px;gap:8px"><a class="btn" href="{{ url_for('public.download', name='AgriSense_Lab_Sheets.pdf') }}" download>Download all 26 lab sheets (PDF)</a>
   <a class="btn" href="{{ url_for('public.download', name='AgriSenseStudent.zip') }}">Student Arduino library (.zip)</a>
   <a class="btn" href="{{ url_for('public.standards') }}">Standards map</a>
   <small class="muted">Ready to print on Letter paper, 2 pages per lab. Each lab also has its own sheet below.</small></div>
