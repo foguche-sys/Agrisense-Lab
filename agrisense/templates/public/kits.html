@@ -22,6 +22,10 @@
   </div>
 </section>
 
+<section id="why" class="grid g4" style="margin-top:10px;gap:12px">
+  {% for t, d in K.WHY %}<div class="card flat"><b>{{ t }}</b><p class="muted" style="margin:4px 0 0">{{ d }}</p></div>{% endfor %}
+</section>
+
 <section id="options" style="margin-top:20px">
   <h2>Options</h2>
   {% if K.ESTIMATED %}<p class="muted">Estimated prices until our supplier quotes are in. Pilot schools get pilot pricing.</p>{% endif %}
@@ -55,7 +59,7 @@
     <div class="card flat"><small class="faint">STEP {{ n }}</small><div><b>{{ t }}</b></div><p class="muted" style="margin:4px 0 0">{{ d }}</p></div>
     {% endfor %}
   </div>
-  <p class="muted" style="margin-top:12px">Funding that often covers kits like this: Perkins V (CTE), Title IV-A, and FFA chapter or local grants. We take purchase orders; we do not take card payments for kits.</p>
+  <p class="muted" style="margin-top:12px">Funding that often covers kits like this: Perkins V (CTE), Title IV-A, and FFA chapter or local grants.</p>
 </section>
 
 <section id="see" style="margin-top:36px">
