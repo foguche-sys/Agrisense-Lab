@@ -3,7 +3,8 @@
 {% block body %}
 <div class="page-head"><div><div class="eyebrow">Professional learning</div><h1>Teacher training</h1>
   <p class="muted" style="margin:0">Three levels. Start small: Level 1 takes about 3 hours, on your own time.</p></div>
-  {% if staff %}<a class="btn" href="{{ url_for('training.admin') }}">Staff: workshops and reviews</a>{% endif %}</div>
+  <div class="row" style="gap:8px"><a class="btn" href="{{ url_for('static', filename='downloads/AgriSense_Teacher_Course_Level1_and_Workshop.pdf') }}" download>Download the course (PDF)</a>
+  {% if staff %}<a class="btn" href="{{ url_for('training.admin') }}">Staff: workshops and reviews</a>{% endif %}</div></div>
 <div class="grid g3">
   {% for n, L in levels.items() %}{% set aw = awards.get(n) %}
   <div class="card"><div class="row between"><span class="eyebrow">Level {{ n }}</span>
