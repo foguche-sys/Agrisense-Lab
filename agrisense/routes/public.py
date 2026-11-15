@@ -4,6 +4,7 @@ from flask import Blueprint, g, redirect, render_template, request, session, url
 from .. import auth
 from ..db import jdump, new_id, now
 from ..rbac import home_for
+from ..services import kits as K
 from ..services import privacy as PRIV
 from .util import db, err, ok
 
@@ -15,6 +16,12 @@ def landing():
     plans = db().q("SELECT * FROM plans ORDER BY COALESCE(price_cents, 99999999)")
     lessons = db().q("SELECT * FROM lessons ORDER BY code")
     return render_template("public/landing.html", plans=plans, lessons=lessons)
+
+
+@bp.route("/kits")
+def kits():
+    """Kits and pricing: the options, what the school provides, how to buy (quote -> PO -> invoice), FAQ."""
+    return render_template("public/kits.html", K=K, video="Video3_Power_Up_Safety_Checks")
 
 
 @bp.route("/home")
@@ -29,16 +36,16 @@ def quote():
         f = request.form
         if not f.get("email") or "@" not in f.get("email", ""):
             err("Enter an email so we can send the quote.")
-            return render_template("public/quote.html", form=f)
+            return render_template("public/quote.html", form=f, quote_choices=K.QUOTE_CHOICES)
         try:
             kits = max(1, int(f.get("kits") or 1))
         except ValueError:
             kits = 1
         db().insert("leads", id=new_id("ld"), name=f.get("name", "")[:120], email=f["email"][:200].lower(),
-                    school=f.get("school", "")[:200], state=f.get("state", "")[:40], plan=f.get("plan", "school"),
+                    school=f.get("school", "")[:200], state=f.get("state", "")[:40], plan=f.get("plan") if f.get("plan") in K.QUOTE_CODES else "starter",
                     kits=kits, created_at=now())
-        return render_template("public/quote.html", sent=True, form={})
-    return render_template("public/quote.html", form={"plan": request.args.get("plan", "school")})
+        return render_template("public/quote.html", sent=True, form={}, quote_choices=K.QUOTE_CHOICES)
+    return render_template("public/quote.html", form={"plan": request.args.get("plan", "starter")}, quote_choices=K.QUOTE_CHOICES)
 
 
 PILOT_ROLES = ["Agriculture teacher", "Science teacher", "Computer science teacher", "CTE director", "School or district leader", "Other"]

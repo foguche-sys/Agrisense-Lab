@@ -38,9 +38,10 @@ LESSONS = [
      "45 min", "ai", "AI4K12-5,SEP-7", ["Look at the evidence", "Take a side", "Debate", "Write your position"]),
 ]
 
-PLANS = [
+PLANS = [   # website licences (Nov 2026). Hardware kits are on /kits (services/kits.py).
     ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9, the AI Lab (2.1–2.5) and the Field Studio."),
-    ("school", "School", 120000, "Per kit per year: all lessons, unlimited classes, data exports, support."),
+    ("virtual", "Virtual", 30000, "No hardware: every lesson in simulation mode, the AI Lab and the Field Studio, for one school."),
+    ("school", "School", 30000, "Per kit per year, with a Starter kit: all lessons on real hardware, unlimited classes, data exports, support."),
     ("district", "District", None, "Several schools: priced by quote, purchase order, privacy agreement, rostering."),
 ]
 
@@ -56,6 +57,9 @@ def seed_catalog(db):
         else:
             db.insert("lessons", id=new_id("ls"), code=code, title=title, kind=kind, summary=summary, duration=dur,
                       equipment=eq, standards=std, parts=jdump(parts))
-    if not db.val("SELECT COUNT(*) AS n FROM plans"):
-        for code, name, cents, desc in PLANS:
+    have_plans = {r["code"] for r in db.q("SELECT code FROM plans")}
+    for code, name, cents, desc in PLANS:                                  # new plans are added, prices kept current
+        if code in have_plans:
+            db.run("UPDATE plans SET name = ?, price_cents = ?, description = ? WHERE code = ?", name, cents, desc, code)
+        else:
             db.insert("plans", id=new_id("pl"), code=code, name=name, price_cents=cents, period="year", description=desc)

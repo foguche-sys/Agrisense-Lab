@@ -1,0 +1,75 @@
+{% extends "base.html" %}{% block title %}Kits and pricing{% endblock %}
+{% block body %}
+<section class="hero">
+  <div>
+    <div class="eyebrow">Kits and pricing</div>
+    <h1>A full precision agriculture lab for your classroom.</h1>
+    <p class="lead">Students wire real farm sensors, run a pump, and decide with data. Start with the classroom lab and add the outdoor field network when you are ready.</p>
+    <div class="row" style="margin-top:20px">
+      <a class="btn primary" href="{{ url_for('public.pilot') }}">Join the {{ K.PILOT_TERM }} pilot</a>
+      <a class="btn" href="{{ url_for('public.quote', plan='starter') }}">Request a quote</a>
+    </div>
+    <p class="muted" style="margin-top:14px">A Starter kit shared by three class sections works out to about <b>${{ K.PER_STUDENT_STARTER }} per student per year</b>, website included.</p>
+  </div>
+  <div class="card" style="padding:12px">
+    {% if video %}
+    <video controls preload="none" poster="{{ url_for('static', filename='videos/' ~ video ~ '.jpg') }}" style="width:100%;border-radius:10px">
+      <source src="{{ url_for('static', filename='videos/' ~ video ~ '.mp4') }}" type="video/mp4">
+      <track kind="captions" srclang="en" label="English" src="{{ url_for('static', filename='videos/' ~ video ~ '.vtt') }}">
+    </video>
+    <p class="muted" style="margin:8px 4px 0;font-size:13px">Watch: powering up the Trainer and the safety checks (about 2 minutes).</p>
+    {% endif %}
+  </div>
+</section>
+
+<section id="options" style="margin-top:20px">
+  <h2>Options</h2>
+  {% if K.ESTIMATED %}<p class="muted">Estimated prices until our supplier quotes are in. Pilot schools get pilot pricing.</p>{% endif %}
+  <div class="grid g2" style="gap:16px">
+    {% for k in K.KITS %}
+    <div class="card" id="{{ k.code }}">
+      {% if k.image %}<img src="{{ url_for('static', filename=k.image) }}" alt="{{ k.name }}" loading="lazy" style="width:100%;border-radius:10px;margin-bottom:10px">{% endif %}
+      <div class="row between"><h3 style="margin:0">{{ k.name }}</h3><span class="pill {{ 'ok' if k.code != 'field' else '' }}">{{ k.tag }}</span></div>
+      <div class="price">{% if K.ESTIMATED %}<span class="unit">est.</span> {% endif %}${{ "{:,}".format(k.price) }}<span class="unit"> {{ k.unit }}</span></div>
+      <p>{{ k.summary }}</p>
+      <ul>{% for i in k.includes %}<li>{{ i }}</li>{% endfor %}</ul>
+      <p class="muted"><b>Best for:</b> {{ k.best_for }}</p>
+      <a class="btn" href="{{ url_for('public.quote', plan=k.code) }}">Request a quote</a>
+    </div>
+    {% endfor %}
+  </div>
+</section>
+
+<section id="provide" style="margin-top:36px">
+  <h2>What your school provides</h2>
+  <div class="grid g2" style="gap:12px">
+    {% for t, d in K.SCHOOL_PROVIDES %}<div class="card flat"><b>{{ t }}</b><p class="muted" style="margin:4px 0 0">{{ d }}</p></div>{% endfor %}
+  </div>
+</section>
+
+<section id="buy" style="margin-top:36px">
+  <h2>How to buy</h2>
+  <div class="grid g4" style="gap:12px">
+    {% for n, t, d in [(1, 'Request a quote', 'Tell us the option and how many kits.'), (2, 'Get a formal quote', 'Within two school days, with the privacy agreement for your district.'),
+                       (3, 'Send a purchase order', 'Your business office issues a PO to AgriSense Hub.'), (4, 'We ship and invoice', 'Kit tested before it leaves; teacher training booked.')] %}
+    <div class="card flat"><small class="faint">STEP {{ n }}</small><div><b>{{ t }}</b></div><p class="muted" style="margin:4px 0 0">{{ d }}</p></div>
+    {% endfor %}
+  </div>
+  <p class="muted" style="margin-top:12px">Funding that often covers kits like this: Perkins V (CTE), Title IV-A, and FFA chapter or local grants. We take purchase orders; we do not take card payments for kits.</p>
+</section>
+
+<section id="see" style="margin-top:36px">
+  <h2>See it</h2>
+  <div class="grid g2" style="gap:16px">
+    <figure class="card" style="margin:0;padding:12px"><img src="{{ url_for('static', filename='img/kits/bench.jpg') }}" alt="Whole bench layout: Trainer, water station, build deck, gateway and field nodes" loading="lazy" style="width:100%;border-radius:10px"><figcaption class="muted" style="margin-top:6px;font-size:13px">The whole bench: Trainer, water station, build deck and field network.</figcaption></figure>
+    <figure class="card" style="margin:0;padding:12px"><img src="{{ url_for('static', filename='img/kits/student_port.jpg') }}" alt="Arduino UNO R4 WiFi student controller in its case beside the controller panel" loading="lazy" style="width:100%;border-radius:10px"><figcaption class="muted" style="margin-top:6px;font-size:13px">The student controller: an Arduino UNO R4 WiFi coded from a Chromebook.</figcaption></figure>
+  </div>
+  <p class="muted" style="margin-top:12px">Lessons and standards: <a href="{{ url_for('public.landing') }}#lessons">14 lessons</a> · <a href="{{ url_for('public.standards') }}">NGSS, CSTA and AFNR map</a> · <a href="{{ url_for('public.privacy') }}">student privacy</a>.</p>
+</section>
+
+<section id="faq" style="margin-top:36px">
+  <h2>Questions</h2>
+  {% for q, a in K.FAQ %}<details class="card flat" style="margin-bottom:8px"><summary><b>{{ q }}</b></summary><p style="margin:8px 0 0">{{ a }}</p></details>{% endfor %}
+  <p class="muted">Still have a question? Email <a href="mailto:felix@agrisensehub.com">felix@agrisensehub.com</a>.</p>
+</section>
+{% endblock %}

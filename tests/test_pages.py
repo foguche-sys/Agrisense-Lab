@@ -3,7 +3,7 @@ import pytest
 
 from conftest import login, login_student
 
-PUBLIC = ["/", "/login", "/login/class", "/login/class?code=AGRI03", "/signup", "/quote", "/privacy"]
+PUBLIC = ["/", "/login", "/login/class", "/login/class?code=AGRI03", "/signup", "/quote", "/privacy", "/kits"]
 
 
 @pytest.mark.parametrize("path", PUBLIC)

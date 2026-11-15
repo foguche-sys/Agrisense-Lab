@@ -6,7 +6,8 @@
   <h1>Thanks, we've got it</h1><p>Our team will email a quote within two school days, including kit hardware, licences and a privacy agreement for your district.</p>
   <a class="btn" href="{{ url_for('public.landing') }}">Back to home</a>
 {% else %}
-  <div class="eyebrow">School and district plans</div><h1>Request a quote</h1>
+  <div class="eyebrow">Kits, licences and district plans</div><h1>Request a quote</h1>
+  <p class="muted">See the options and estimated prices on <a href="{{ url_for('public.kits') }}">Kits and pricing</a>. We reply with a formal quote your business office can turn into a purchase order.</p>
   <form method="post">{{ csrf() }}
     <div class="grid g2" style="gap:12px">
       <div class="field"><label for="n">Your name</label><input id="n" name="name" value="{{ form.name or '' }}"></div>
@@ -14,7 +15,7 @@
       <div class="field span2"><label for="s">School or district</label><input id="s" name="school" value="{{ form.school or '' }}"></div>
       <div class="field"><label for="st">State</label><input id="st" name="state" value="{{ form.state or '' }}"></div>
       <div class="field"><label for="k">How many kits?</label><input id="k" type="number" min="1" name="kits" value="{{ form.kits or 1 }}"></div>
-      <div class="field span2"><label for="p">Plan</label><select id="p" name="plan"><option value="school" {{ 'selected' if form.plan == 'school' }}>School</option><option value="district" {{ 'selected' if form.plan == 'district' }}>District</option></select></div>
+      <div class="field span2"><label for="p">Option</label><select id="p" name="plan">{% for c, n in quote_choices %}<option value="{{ c }}" {{ 'selected' if form.plan == c or (form.plan == 'school' and c == 'starter') }}>{{ n }}</option>{% endfor %}</select></div>
     </div>
     <button class="btn primary">Send request</button>
   </form>
