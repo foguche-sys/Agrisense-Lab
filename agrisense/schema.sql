@@ -8,7 +8,9 @@ CREATE TABLE IF NOT EXISTS orgs (
   kind TEXT NOT NULL,                  -- platform | client
   client_type TEXT,                    -- district | private | college | extension | school
   state TEXT,
-  created_at TEXT NOT NULL
+  created_at TEXT NOT NULL,
+  approved INTEGER NOT NULL DEFAULT 1,  -- 0 = signed up on the website, waiting for AgriSense staff to approve
+  approved_at TEXT
 );
 
 CREATE TABLE IF NOT EXISTS schools (

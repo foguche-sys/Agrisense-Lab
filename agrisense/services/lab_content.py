@@ -231,7 +231,7 @@ LABS = {
         "goal": "Program the student Arduino to read soil moisture from the Trainer, show it on the LED grid, and request a safe pump run.",
         "need": ["The student Arduino (UNO R4 WiFi) in its case, plugged into the STUDENT socket", "A Chromebook or laptop with a USB-C cable",
                  "Arduino Cloud Editor (your school account)",
-                 "The AgriSense examples: your teacher imports AgriSenseStudent.zip (from the website, /static/downloads/AgriSenseStudent.zip) once",
+                 "The AgriSense examples: your teacher imports AgriSenseStudent.zip (teacher's Lessons page: Student Arduino library) once",
                  "Water in the water station"],
         "safety": ["Every pump run your code asks for still needs the Trainer's OK: it refuses runs that are too long, too often or with no water.",
                    "Your teacher unlocks the pump before you test the 'ask for water' step."],

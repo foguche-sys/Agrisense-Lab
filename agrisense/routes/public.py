@@ -1,11 +1,14 @@
 """Public site and sign-in: landing, plans, quote request, pilot sign-up, staff sign-in, student picture sign-in, school sign-up."""
-from flask import Blueprint, g, redirect, render_template, request, session, url_for
+import os
+
+from flask import Blueprint, abort, g, redirect, render_template, request, send_from_directory, session, url_for
 
 from .. import auth
 from ..db import jdump, new_id, now
-from ..rbac import home_for
+from ..rbac import PLATFORM_ROLES, home_for
 from ..services import kits as K
 from ..services import privacy as PRIV
+from ..services.training import is_teacherish
 from .util import db, err, ok
 
 bp = Blueprint("public", __name__)
@@ -164,7 +167,7 @@ def signup():
             return render_template("public/signup.html", form=f)
         org = new_id("org")
         d.insert("orgs", id=org, name=f["school"][:200], kind="client", client_type=f.get("client_type") or "school",
-                 state=f["state"][:40], created_at=now())
+                 state=f["state"][:40], created_at=now(), approved=0)
         sch = new_id("sch")
         d.insert("schools", id=sch, org_id=org, name=f["school"][:200], city=f.get("city", "")[:80], state=f["state"][:40],
                  timezone=f.get("timezone") or "America/Chicago", settings=jdump({}), created_at=now())
@@ -173,13 +176,37 @@ def signup():
         auth.add_membership(d, uid, "school_admin", school_id=sch)
         plan = d.val("SELECT id FROM plans WHERE code = 'pilot'")
         if plan:
-            d.insert("subscriptions", id=new_id("sub"), org_id=org, plan_id=plan, licences=1, status="trial", created_at=now())
+            d.insert("subscriptions", id=new_id("sub"), org_id=org, plan_id=plan, licences=1, status="pending", created_at=now())
         d.insert("privacy_agreements", id=new_id("dpa"), org_id=org, version=PRIV.DPA_VERSION, status="not_started")
         u = d.one("SELECT * FROM users WHERE id = ?", uid)
         auth.login_user(u)
-        ok("Your school is ready. Next: register your kit and create a class.")
-        return redirect(url_for("admin.overview"))
+        return redirect(url_for("public.pending"))
     return render_template("public/signup.html", form={})
+
+
+@bp.route("/pending")
+@auth.login_required
+def pending():
+    """Shown after sign-up until AgriSense staff approve the school (Staff console > Schools waiting for approval)."""
+    if not g.pending:
+        return redirect(url_for("public.home"))
+    return render_template("public/pending.html")
+
+
+DOWNLOADS = os.path.join(os.path.dirname(os.path.dirname(__file__)), "private_downloads")
+
+
+@bp.route("/downloads/<name>")
+@auth.login_required
+def download(name):
+    """Teacher files (lab sheets, course PDF, the student Arduino library). Only signed-in teachers and admins of an
+    approved school, and AgriSense staff, can download them; they are not in /static, so a shared link does not work."""
+    staff = any(m["role"] in PLATFORM_ROLES for m in g.memberships)
+    if not (staff or is_teacherish(g.memberships)):
+        abort(403)
+    if name not in os.listdir(DOWNLOADS):
+        abort(404)
+    return send_from_directory(DOWNLOADS, name, as_attachment=True)
 
 
 @bp.route("/privacy")

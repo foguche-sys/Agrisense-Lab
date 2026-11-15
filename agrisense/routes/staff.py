@@ -38,6 +38,9 @@ def console():
                 "WHERE dv.status != 'retired' AND (dv.last_seen IS NULL OR dv.last_seen < ?) ORDER BY dv.last_seen LIMIT 20", ago(hours=2)) \
         if (sp("platform.fleet") or sp("device.health")) else []
     leads = d.q("SELECT * FROM leads ORDER BY created_at DESC LIMIT 20") if (sp("platform.clients.leads") or sp("platform.clients")) else []
+    waiting = d.q("""SELECT o.*, u.name AS person, u.email FROM orgs o
+                     LEFT JOIN memberships m ON m.org_id = o.id AND m.role = 'client_admin' LEFT JOIN users u ON u.id = m.user_id
+                     WHERE o.kind = 'client' AND o.approved = 0 ORDER BY o.created_at""") if sp("platform.clients") else []
     pilots = d.q("SELECT * FROM pilot_signups ORDER BY created_at DESC LIMIT 50") if (sp("platform.clients.leads") or sp("platform.clients")) else []
     invoices = d.q("SELECT i.*, o.name AS client FROM invoices i JOIN orgs o ON o.id = i.org_id ORDER BY i.created_at DESC LIMIT 30") \
         if (sp("platform.billing") or sp("platform.quotes")) else []
@@ -47,7 +50,32 @@ def console():
                 platform_org_id(d)) if sp("platform.staff") else []
     alive = d.q("SELECT dv.status, COUNT(*) AS n FROM devices dv GROUP BY dv.status")
     return render_template("staff/console.html", clients=clients, fleet=fleet, stale=stale, leads=leads, pilots=pilots, invoices=invoices,
-                           grants=grants, staff=staff, alive=alive, roles=PLATFORM_ROLES)
+                           grants=grants, staff=staff, alive=alive, roles=PLATFORM_ROLES, waiting=waiting)
+
+
+@bp.route("/approve", methods=["POST"])
+def approve():
+    """Approve (or decline) a school that signed up on the website. Until approved its people see only the
+    'waiting for approval' page. Decline locks the sign-up account; nothing else is deleted."""
+    if not sp("platform.clients"):
+        abort(403)
+    d = db()
+    org = d.one("SELECT * FROM orgs WHERE id = ? AND kind = 'client'", request.form.get("org_id"))
+    if not org:
+        abort(404)
+    if request.form.get("do") == "approve":
+        d.run("UPDATE orgs SET approved = 1, approved_at = ? WHERE id = ?", now(), org["id"])
+        d.run("UPDATE subscriptions SET status = 'trial' WHERE org_id = ? AND status = 'pending'", org["id"])
+        log(d, "org.approve", org["name"], org_id=org["id"])
+        ok(f"{org['name']} approved. Email the teacher that they can sign in.")
+    elif request.form.get("do") == "decline":
+        d.run("UPDATE users SET is_active = 0 WHERE id IN (SELECT user_id FROM memberships WHERE org_id = ?)", org["id"])
+        d.run("UPDATE subscriptions SET status = 'declined' WHERE org_id = ? AND status = 'pending'", org["id"])
+        log(d, "org.decline", org["name"], org_id=org["id"])
+        ok(f"{org['name']} declined. Its sign-up account can no longer sign in.")
+    else:
+        abort(400)
+    return redirect(url_for("staff.console"))
 
 
 @bp.route("/inventory", methods=["GET", "POST"])

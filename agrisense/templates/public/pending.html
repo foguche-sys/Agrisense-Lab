@@ -1,0 +1,12 @@
+{% extends "base.html" %}{% block title %}Waiting for approval{% endblock %}
+{% block body %}
+<div class="narrow" style="max-width:640px"><div class="card">
+  <div class="eyebrow">Almost there</div>
+  <h1>Thanks, your school is signed up</h1>
+  <p class="lead">We check every new school before it opens the lessons, the AI Lab and the downloads. This keeps student data safe and lets us set up your kit with you.</p>
+  <p>We'll email <b>{{ g.user.email }}</b> within two school days. When we approve your school, sign in again and you'll go straight to your school page.</p>
+  <p class="muted">Questions? Email <a href="mailto:felix@agrisensehub.com">felix@agrisensehub.com</a>.</p>
+  <div class="row" style="gap:8px;margin-top:12px"><a class="btn" href="{{ url_for('public.kits') }}">See kits and pricing</a>
+    <a class="btn" href="{{ url_for('public.account') }}">My account</a></div>
+</div></div>
+{% endblock %}

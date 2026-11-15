@@ -201,7 +201,7 @@ def test_pdf_downloads_are_linked_and_served(client, db):
     assert "AgriSense_Lab_Sheets_All_14.pdf" in client.get(f"/teach/{ids(db)['cls']}/lessons").get_data(as_text=True)
     assert "AgriSense_Teacher_Course_Level1_and_Workshop.pdf" in client.get("/training/").get_data(as_text=True)
     for f in ("AgriSense_Lab_Sheets_All_14.pdf", "AgriSense_Teacher_Course_Level1_and_Workshop.pdf"):
-        r = client.get(f"/static/downloads/{f}")
+        r = client.get(f"/downloads/{f}")
         assert r.status_code == 200 and r.data[:4] == b"%PDF"
         r.close()
 

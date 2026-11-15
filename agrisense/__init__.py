@@ -37,6 +37,11 @@ def create_app(test_config=None):
     database = Database(app.config["DATABASE_URL"])
     app.extensions["agrisense_db"] = database
 
+    # Pages a person may open while their school waits for AgriSense staff to approve it
+    OPEN_WHILE_PENDING = {"static", "public.landing", "public.kits", "public.pilot", "public.quote", "public.privacy",
+                          "public.standards", "public.agreement", "public.login", "public.logout", "public.account",
+                          "public.pending", "public.signup", "public.student_code"}
+
     @app.before_request
     def _before():
         if not app.config.get("TESTING") and os.environ.get("AUTO_HOUSEKEEPING", "1") == "1":
@@ -48,6 +53,9 @@ def create_app(test_config=None):
         if u and u["must_change_password"] and u["email"] and request.endpoint not in ("public.account", "public.logout", "static"):
             from flask import redirect, url_for
             return redirect(url_for("public.account"))
+        if u and g.pending and request.endpoint not in OPEN_WHILE_PENDING:
+            from flask import redirect, url_for
+            return redirect(url_for("public.pending"))
 
     app.teardown_appcontext(close_db)
 

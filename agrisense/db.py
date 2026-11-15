@@ -72,6 +72,8 @@ class Database:
         ("users", "failed_logins", "INTEGER NOT NULL DEFAULT 0"),
         ("users", "locked_until", "TEXT"),
         ("lessons", "seq", "INTEGER"),
+        ("orgs", "approved", "INTEGER NOT NULL DEFAULT 1"),
+        ("orgs", "approved_at", "TEXT"),
     ]
 
     def init_schema(self):

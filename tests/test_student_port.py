@@ -1,6 +1,6 @@
 import re
 
-from conftest import device_key
+from conftest import device_key, login
 from agrisense.db import ahead
 
 
@@ -48,5 +48,6 @@ def test_deck_posts_over_wifi_without_a_gateway(app, client, db):
 
 
 def test_library_download_is_served(client):
-    r = client.get("/static/downloads/AgriSenseStudent.zip")
+    login(client, "teacher")
+    r = client.get("/downloads/AgriSenseStudent.zip")
     assert r.status_code == 200 and r.data[:2] == b"PK"

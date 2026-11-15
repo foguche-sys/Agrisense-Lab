@@ -255,8 +255,47 @@ def test_signup_creates_school(client, db):
     tok = csrf(client, "/signup")
     r = client.post("/signup", data={"_csrf": tok, "name": "New T", "email": "new@school.org", "password": "longpassword1",
                                      "school": "Rock Bridge HS", "state": "MO"})
-    assert r.status_code == 302 and r.headers["Location"].endswith("/admin/")
+    assert r.status_code == 302 and r.headers["Location"].endswith("/pending")
     assert db.val("SELECT COUNT(*) AS n FROM schools WHERE name = 'Rock Bridge HS'") == 1
+    # Waiting for approval: only public pages; lessons, admin, AI Lab and downloads go to /pending
+    assert "Thanks, your school is signed up" in client.get("/pending").get_data(as_text=True)
+    for path in ("/admin/", "/labs/1.1", "/ai/", "/training/", "/downloads/AgriSenseStudent.zip", "/home"):
+        r = client.get(path)
+        assert r.status_code == 302 and r.headers["Location"].endswith("/pending"), path
+    assert client.get("/kits").status_code == 200
+    org = db.val("SELECT id FROM orgs WHERE name = 'Rock Bridge HS'")
+    assert db.val("SELECT approved FROM orgs WHERE id = ?", org) == 0
+    # AgriSense staff approve it
+    client.post("/logout", data={"_csrf": csrf(client, "/kits")})
+    tok = login(client, "owner")
+    assert "Rock Bridge HS" in client.get("/staff/").get_data(as_text=True)
+    client.post("/staff/approve", data={"_csrf": tok, "org_id": org, "do": "approve"})
+    assert db.val("SELECT approved FROM orgs WHERE id = ?", org) == 1
+    assert db.val("SELECT status FROM subscriptions WHERE org_id = ?", org) == "trial"
+    client.post("/logout", data={"_csrf": tok})
+    tok = csrf(client, "/login")
+    client.post("/login", data={"_csrf": tok, "email": "new@school.org", "password": "longpassword1"})
+    assert client.get("/admin/").status_code == 200
+    assert client.get("/pending").status_code == 302
+
+
+def test_staff_can_decline_a_signup(client, db):
+    tok = csrf(client, "/signup")
+    client.post("/signup", data={"_csrf": tok, "name": "Spam", "email": "x@spam.org", "password": "longpassword1",
+                                 "school": "Not A School", "state": "MO"})
+    org = db.val("SELECT id FROM orgs WHERE name = 'Not A School'")
+    client.post("/logout", data={"_csrf": csrf(client, "/kits")})
+    tok = login(client, "owner")
+    client.post("/staff/approve", data={"_csrf": tok, "org_id": org, "do": "decline"})
+    assert db.val("SELECT is_active FROM users WHERE email = 'x@spam.org'") == 0
+    assert db.val("SELECT approved FROM orgs WHERE id = ?", org) == 0
+
+
+def test_teacher_files_need_sign_in(client, db):
+    assert client.get("/static/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 404
+    assert client.get("/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 302      # to sign in
+    login_student(client, db)
+    assert client.get("/downloads/AgriSense_Lab_Sheets_All_14.pdf").status_code == 403
 
 
 def test_inventory_and_invoice(client, db):

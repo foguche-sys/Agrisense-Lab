@@ -67,6 +67,7 @@ def login_user(user):
 def load_user():
     g.user = None
     g.memberships = []
+    g.pending = False
     uid = session.get("uid")
     if not uid:
         return
@@ -77,6 +78,19 @@ def load_user():
         return
     g.user = u
     g.memberships = load_memberships(db, uid)
+    g.pending = waiting_for_approval(db, g.memberships)
+
+
+def waiting_for_approval(db, memberships):
+    """True when this person's school signed up on the website and AgriSense staff have not approved it yet.
+    Until then they can see the public pages and their account, but no lessons, data, AI Lab or downloads."""
+    from .rbac import resolve_scope
+    orgs = set()
+    for m in memberships:
+        orgs.add(resolve_scope(db, team_id=m.get("team_id"), class_id=m.get("class_id"),
+                               school_id=m.get("school_id"), org_id=m.get("org_id"))[3])
+    orgs.discard(None)
+    return any(db.val("SELECT approved FROM orgs WHERE id = ?", o) == 0 for o in orgs)
 
 
 def csrf_token():

@@ -22,7 +22,7 @@ The Trainer's own limits (30 s, NO FLOW, BLOCKED, tank) still apply to every run
 2. **Node E:** same board. Libraries: Adafruit AHTX0, Adafruit SSD1306, Adafruit GFX, ArduinoJson 7 (RadioLib for LoRa mode).
    Fill `secrets.h` with the deck's own device key. The screen shows moisture, pods and "sent" once a minute (press PRG to send now).
    With the Field add-on you may switch `SEND_MODE` to `SEND_LORA`; leave it on Wi-Fi otherwise.
-3. **Student Arduino:** import `AgriSenseStudent.zip` (website: `/static/downloads/AgriSenseStudent.zip`) into the Arduino
+3. **Student Arduino:** import `AgriSenseStudent.zip` (website, signed in as a teacher: Lessons page > Student Arduino library, `/downloads/AgriSenseStudent.zip`) into the Arduino
    Cloud Editor once, then open Examples → AgriSenseStudent → ReadSoil.
 
 ## Fix in this release
