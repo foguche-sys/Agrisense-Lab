@@ -11,9 +11,16 @@
     Grow light   PCA9685 ch2 -> logic-level MOSFET module gate -> 12 V LED strip on load jacks L4 (white)
                  (PCA runs at 50 Hz for the servo, so dimming below ~30 % can flicker to the eye; plants don't mind)
 
+  I2C buses (wiring sheet W5):
+    Wire  = module bus  SDA GPIO 5,  SCL GPIO 6  (MCP23017, PCA9685, ADS1115, Qwiic port, pods, coding posts 10/11)
+    Wire1 = STUDENT port SDA GPIO 38, SCL GPIO 39 (I2C target at 0x42 for the student's UNO R4; 3.3 V pad not connected)
+
   Safety is enforced HERE as well as on the server:
     pump max 30 s, 60 s rest, only with tank OK,
     stop on NO FLOW (< 10 kPa 2 s after start) or BLOCKED (> 150 kPa).
+  STUDENT port (v1.2): student code can only ASK for a run (max 20 s). The Trainer decides with
+  as_decide_pump() in agrisense_protocol.h: needs the teacher's unlock (sent by the website), Wi-Fi,
+  rest time, tank, a probe reading and soil below 40 %. Answers OK or a REFUSED code.
   Libraries: Adafruit ADS1X15, Adafruit MCP23017, Adafruit PWM Servo Driver, Adafruit AHTX0, ArduinoJson 7.
 */
 #include <WiFi.h>
@@ -25,8 +32,9 @@
 #include <Adafruit_PWMServoDriver.h>
 #include <Adafruit_AHTX0.h>
 #include "secrets.h"
+#include "agrisense_protocol.h"
 
-#define FW_VERSION "trainer-1.1.0"
+#define FW_VERSION "trainer-1.2.0"
 #define PCA_GROW 2
 #define RS485_TX 4
 #define RS485_RX 40
@@ -35,6 +43,10 @@
 #define MCP_PUMP 11
 #define MCP_FAN 12
 #define MCP_LEVEL 13
+#define I2C_SDA 5
+#define I2C_SCL 6
+#define STUDENT_SDA 38
+#define STUDENT_SCL 39
 
 const uint32_t PUMP_MAX_MS = 30000, PUMP_REST_MS = 60000, FLOW_CHECK_MS = 2000;
 const float NO_FLOW_KPA = 10.0, BLOCKED_KPA = 150.0;
@@ -51,6 +63,20 @@ uint32_t pumpStart = 0, pumpStopAt = 0, pumpOffAt = 0, fanStopAt = 0, buzzerStop
 String pendingEvent = "";
 int ventDeg = 90;
 int growPct = 0;
+
+// ---------- cached sensor readings (probe read every 2 s; shared by the website post and the STUDENT port) ----------
+bool probeOk = false; float sMoist = 0, sTemp = 0, sEc = 0, sPh = 0, sAirT = 0, sHum = 0, sLux = 0;
+bool airOk = false, luxOk = false;
+uint32_t lastSensorRead = 0, lastServerOk = 0, studentUnlockUntil = 0;
+
+// ---------- STUDENT port state (I2C target on Wire1) ----------
+portMUX_TYPE stuMux = portMUX_INITIALIZER_UNLOCKED;
+volatile uint8_t stuCmd = 0, stuArg = 0;
+volatile bool stuNew = false;
+uint8_t stuSnap[AS_SNAPSHOT_LEN];                // last snapshot, ready to send
+uint8_t stuReply[2] = {AS_PENDING, 0};           // reply to the last command
+volatile bool stuWantSnap = true;                // the next read returns the snapshot (else the 2-byte reply)
+String studentEvent = "";                        // reported to the website with the next post
 
 // ---------- RS485 soil probe (Modbus RTU function 03) ----------
 uint16_t crc16(const uint8_t *b, size_t n) {
@@ -145,15 +171,90 @@ void safetyLoop() {
 }
 
 // ---------- platform ----------
+void readSensors() {
+  float m, t, ec, ph;
+  probeOk = readProbe(m, t, ec, ph);
+  if (probeOk) { sMoist = m; sTemp = t; sEc = ec; sPh = ph; }
+  airOk = false;
+  if (haveAht) { sensors_event_t h, tp; if (aht.getEvent(&h, &tp)) { sAirT = tp.temperature; sHum = h.relative_humidity; airOk = true; } }
+  float lux; luxOk = haveLux && readLux(lux); if (luxOk) sLux = lux;
+  lastSensorRead = millis();
+}
+
+// ---------- STUDENT port ----------
+bool online() { return WiFi.status() == WL_CONNECTED && lastServerOk && millis() - lastServerOk < 30000; }
+bool studentUnlocked() { return online() && studentUnlockUntil && (int32_t)(studentUnlockUntil - millis()) > 0; }
+
+void studentSnapshot() {                          // rebuild the 20-byte snapshot from the cached readings
+  AsSnapshot s;
+  s.flags = (probeOk ? AS_F_PROBE : 0) | (tankOk() ? AS_F_TANK : 0) | (pumpOn ? AS_F_PUMP : 0) |
+            (studentUnlocked() ? AS_F_UNLOCKED : 0) | (airOk ? AS_F_AIR : 0) | (luxOk ? AS_F_LIGHT : 0) | (online() ? AS_F_ONLINE : 0);
+  s.moisture = sMoist; s.soilTemp = sTemp; s.ec = sEc; s.ph = sPh; s.pressure = pressureKpa();
+  s.airTemp = sAirT; s.humidity = sHum; s.lux = sLux;
+  s.pumpLeft = pumpOn && pumpStopAt > millis() ? (uint8_t)min<uint32_t>(255, (pumpStopAt - millis()) / 1000 + 1) : 0;
+  uint8_t buf[AS_SNAPSHOT_LEN]; as_pack_snapshot(s, buf);
+  portENTER_CRITICAL(&stuMux); memcpy(stuSnap, buf, AS_SNAPSHOT_LEN); portEXIT_CRITICAL(&stuMux);
+}
+
+void onStudentReceive(int n) {                   // runs in the I2C task: only store, decide in loop()
+  if (n < 1) return;
+  uint8_t c = Wire1.read(), a = n > 1 ? Wire1.read() : 0;
+  while (Wire1.available()) Wire1.read();
+  portENTER_CRITICAL(&stuMux);
+  if (c == AS_CMD_SNAPSHOT) stuWantSnap = true;
+  else { stuWantSnap = false; stuCmd = c; stuArg = a; stuNew = true; stuReply[0] = AS_PENDING; stuReply[1] = 0; }
+  portEXIT_CRITICAL(&stuMux);
+}
+
+void onStudentRequest() {
+  uint8_t buf[AS_SNAPSHOT_LEN]; size_t n;
+  portENTER_CRITICAL(&stuMux);
+  if (stuWantSnap) { memcpy(buf, stuSnap, AS_SNAPSHOT_LEN); n = AS_SNAPSHOT_LEN; }
+  else { buf[0] = stuReply[0]; buf[1] = stuReply[1]; n = 2; }
+  portEXIT_CRITICAL(&stuMux);
+  Wire1.write(buf, n);
+}
+
+void studentBegin() {
+  studentSnapshot();
+  Wire1.onReceive(onStudentReceive);
+  Wire1.onRequest(onStudentRequest);
+  Wire1.begin((uint8_t)AS_I2C_ADDR, STUDENT_SDA, STUDENT_SCL, 100000);
+}
+
+void studentLoop() {                              // decide queued STUDENT commands with the Trainer's own rules
+  if (!stuNew) return;
+  portENTER_CRITICAL(&stuMux); uint8_t c = stuCmd, a = stuArg; stuNew = false; portEXIT_CRITICAL(&stuMux);
+  uint8_t res = AS_BAD_CMD, wait = 0;
+  if (c == AS_CMD_PUMP) {
+    AsPumpState st{online(), studentUnlocked(), tankOk(), probeOk, pumpOn, sMoist,
+                   pumpOffAt ? (millis() - pumpOffAt) / 1000 : 100000UL};
+    res = as_decide_pump(st, a, wait);
+    if (res == AS_OK && !pumpStartFor(a * 1000UL)) res = tankOk() ? AS_TOO_SOON : AS_TANK_LOW;
+    studentEvent = res == AS_OK ? "pump_ok:" + String(a) : "refused:" + String(res);
+    Serial.printf("STUDENT pump %u s -> %s\n", a, as_reason(res));
+  } else if (c == AS_CMD_STOP) { pumpOff("STUDENT stop"); res = AS_OK; }
+  else if (c == AS_CMD_BEEP) { uint8_t t = a < 1 ? 1 : a > 10 ? 10 : a; mcp.digitalWrite(MCP_BUZZER, HIGH); buzzerStopAt = millis() + t * 100UL; res = AS_OK; }
+  else if (c == AS_CMD_LEDBAR) { int k = a > 10 ? 10 : a; for (int i = 0; i < 10; i++) mcp.digitalWrite(i, i < k); res = AS_OK; }
+  portENTER_CRITICAL(&stuMux); stuReply[0] = res; stuReply[1] = wait; portEXIT_CRITICAL(&stuMux);
+}
+
+void readServerReply(JsonDocument &res) {
+  lastServerOk = millis();
+  JsonVariant su = res["student"]["unlocked_s"];
+  if (!su.isNull()) { long u = su.as<long>(); studentUnlockUntil = u > 0 ? millis() + (uint32_t)u * 1000UL : 0; }
+  for (JsonVariant c : res["commands"].as<JsonArray>()) applyCommand(c.as<String>());
+}
+
+// ---------- platform ----------
 void postFeeds() {
   JsonDocument doc;
   doc["firmware"] = FW_VERSION;
   doc["rssi"] = WiFi.RSSI();
   JsonObject f = doc["feeds"].to<JsonObject>();
-  float m, t, ec, ph;
-  if (readProbe(m, t, ec, ph)) f["moisture"] = m;
-  if (haveAht) { sensors_event_t h, tp; aht.getEvent(&h, &tp); f["air-temp"] = tp.temperature; f["humidity"] = h.relative_humidity; }
-  float lux; if (haveLux && readLux(lux)) f["light"] = round(lux);
+  if (probeOk) f["moisture"] = sMoist;
+  if (airOk) { f["air-temp"] = sAirT; f["humidity"] = sHum; }
+  if (luxOk) f["light"] = round(sLux);
   f["pressure"] = round(pressureKpa() * 10) / 10.0;
   f["tank"] = tankOk() ? "OK" : "LOW";
   f["pump"] = pumpOn ? "ON" : "OFF";
@@ -161,6 +262,7 @@ void postFeeds() {
   f["vent"] = ventDeg;
   f["growlight"] = growPct;
   if (pendingEvent.length()) doc["event"] = pendingEvent;
+  if (studentEvent.length()) doc["student_event"] = studentEvent;
   String body; serializeJson(doc, body);
 
   HTTPClient http;
@@ -170,9 +272,9 @@ void postFeeds() {
   http.setTimeout(4000);
   int code = http.POST(body);
   if (code == 200) {
-    pendingEvent = "";
+    pendingEvent = ""; studentEvent = "";
     JsonDocument res; deserializeJson(res, http.getString());
-    for (JsonVariant c : res["commands"].as<JsonArray>()) applyCommand(c.as<String>());
+    readServerReply(res);
   } else Serial.printf("ingest HTTP %d\n", code);
   http.end();
 }
@@ -183,7 +285,7 @@ void pollCommands() {
   http.setTimeout(3000);
   if (http.GET() == 200) {
     JsonDocument res; deserializeJson(res, http.getString());
-    for (JsonVariant c : res["commands"].as<JsonArray>()) applyCommand(c.as<String>());
+    readServerReply(res);
   }
   http.end();
 }
@@ -192,7 +294,7 @@ void setup() {
   Serial.begin(115200);
   pinMode(RS485_DE, OUTPUT); digitalWrite(RS485_DE, LOW);
   Serial1.begin(4800, SERIAL_8N1, RS485_RX, RS485_TX);
-  Wire.begin();
+  Wire.begin(I2C_SDA, I2C_SCL);                     // module bus (was Wire.begin(): wrong default pins on the Heltec V3)
   ads.begin(); ads.setGain(GAIN_ONE);
   mcp.begin_I2C();
   for (int i = 0; i <= 12; i++) { mcp.pinMode(i, OUTPUT); mcp.digitalWrite(i, LOW); }
@@ -201,15 +303,19 @@ void setup() {
   pca.begin(); pca.setPWMFreq(50); setVent(ventDeg); setGrow(0);
   haveLux = luxBegin();
   haveAht = aht.begin();
+  studentBegin();
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }
 
-uint32_t lastPost = 0, lastPoll = 0;
+uint32_t lastPost = 0, lastPoll = 0, lastSnap = 0;
 void loop() {
   safetyLoop();                                     // always runs, even offline
-  if (WiFi.status() != WL_CONNECTED) { pumpOff("no Wi-Fi"); delay(50); return; }
   uint32_t now = millis();
-  if (now - lastPost > 5000 || pendingEvent.length()) { lastPost = now; postFeeds(); }
+  if (now - lastSensorRead > 2000) readSensors();
+  if (now - lastSnap > 250) { lastSnap = now; studentSnapshot(); }
+  studentLoop();                                    // answers the STUDENT port even offline (with REFUSED: offline)
+  if (WiFi.status() != WL_CONNECTED) { pumpOff("no Wi-Fi"); delay(20); return; }
+  if (now - lastPost > 5000 || pendingEvent.length() || studentEvent.length()) { lastPost = now; postFeeds(); }
   else if (now - lastPoll > 1000) { lastPoll = now; pollCommands(); }
   delay(20);
 }

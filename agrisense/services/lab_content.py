@@ -229,7 +229,9 @@ LABS = {
         "hook": "Farm robots and smart pumps run on code someone wrote. Today your code reads the soil and asks for water, and the Trainer decides whether it is safe.",
         "goal": "Program the student Arduino to read soil moisture from the Trainer, show it on the LED grid, and request a safe pump run.",
         "need": ["The student Arduino (UNO R4 WiFi) in its case, plugged into the STUDENT socket", "A Chromebook or laptop with a USB-C cable",
-                 "Arduino Cloud Editor (your school account)", "The AgriSense example sketches from the class page", "Water in the water station"],
+                 "Arduino Cloud Editor (your school account)",
+                 "The AgriSense examples: your teacher imports AgriSenseStudent.zip (from the website, /static/downloads/AgriSenseStudent.zip) once",
+                 "Water in the water station"],
         "safety": ["Every pump run your code asks for still needs the Trainer's OK: it refuses runs that are too long, too often or with no water.",
                    "Your teacher unlocks the pump before you test the 'ask for water' step."],
         "steps": [

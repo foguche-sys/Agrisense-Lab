@@ -3,7 +3,7 @@
 Every device has a key (flashed in secrets.h). The platform only keeps its SHA-256 hash.
 """
 from ..auth import hash_key
-from ..db import jload, new_id, now
+from ..db import jload, new_id, now, parse_ts
 from . import feeds as F
 
 ALERT_TEXT = {
@@ -123,7 +123,40 @@ def handle(db, dev, body):
             if ev in ("no_flow", "blocked", "tank_low"):
                 cls_id = db.val("SELECT class_id FROM teams WHERE id = ?", team["id"])
                 _alert(db, ev, dev, class_id=cls_id)
-    return {"ok": True, "stored": stored, "server_time": now(), "commands": take_commands(db, dev)}
+            student_event(db, dev, team, body.get("student_event"))
+    out = {"ok": True, "stored": stored, "server_time": now(), "commands": take_commands(db, dev)}
+    if dev["kind"] == "trainer":
+        out["student"] = student_status(db, dev)
+    return out
+
+
+STUDENT_REASONS = {10: "controls locked", 11: "too long", 12: "pump resting", 13: "tank low", 14: "soil already wet",
+                   15: "no probe reading", 16: "pump already running", 17: "bad request", 18: "Trainer offline"}
+
+
+def student_status(db, dev):
+    """What the Trainer needs for its STUDENT port: seconds left on the teacher's unlock (0 = locked)."""
+    cls = db.one("SELECT c.* FROM classes c JOIN teams t ON t.class_id = c.id WHERE t.id = ?", dev["team_id"]) if dev["team_id"] else None
+    left = 0
+    if cls and cls["controls_unlocked_until"] and cls["controls_unlocked_until"] > now():
+        left = int(parse_ts(cls["controls_unlocked_until"]).timestamp() - parse_ts(now()).timestamp())
+    return {"unlocked_s": max(0, left)}
+
+
+def student_event(db, dev, team, ev):
+    """The student's UNO R4 asked the Trainer for water: 'pump_ok:10' or 'refused:12'. Logged for the teacher."""
+    if not ev or not isinstance(ev, str):
+        return
+    from .audit import log
+    kind, _, val = ev.partition(":")
+    if kind == "pump_ok" and val.isdigit():
+        feed = F.get_or_create(db, f"{team['slug']}.pump", F.TRAINER_COMPONENTS["pump"][0], F.TRAINER_COMPONENTS["pump"][2], "output",
+                               team_id=team["id"], device_id=dev["id"])
+        F.write(db, feed, "ON", source="student-arduino", run_actions=False)
+        log(db, "student.pump", f"{team['name']}: student Arduino ran the pump for {int(val)} s", school_id=dev["school_id"])
+    elif kind == "refused" and val.isdigit():
+        log(db, "student.refused", f"{team['name']}: Trainer refused the student Arduino ({STUDENT_REASONS.get(int(val), val)})",
+            school_id=dev["school_id"])
 
 
 def take_commands(db, dev):

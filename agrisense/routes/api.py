@@ -146,7 +146,10 @@ def v1_commands():
         return jsonify({"ok": False, "error": str(e)}), e.code
     ingest.touch(d, dev)
     cfg = {"components": ingest.trainer_config(dev)} if dev["kind"] == "trainer" else {}
-    return jsonify({"ok": True, "commands": ingest.take_commands(d, dev), "config": cfg, "server_time": now()})
+    out = {"ok": True, "commands": ingest.take_commands(d, dev), "config": cfg, "server_time": now()}
+    if dev["kind"] == "trainer":
+        out["student"] = ingest.student_status(d, dev)
+    return jsonify(out)
 
 
 # ---------------- team key (students' own code) ----------------
