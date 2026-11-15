@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% block title %}Level 2 workshop · Teacher training{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Level 2 · {{ level.hours }} hours · {{ level.format }}</div><h1>Hands-on workshop</h1>
+  <p class="muted" style="margin:0">{{ level.outcome }}</p></div>
+  <a class="btn" href="{{ url_for('training.home') }}#level2">Back to training</a></div>
+{% if done %}<div class="banner info"><b>You attended</b> {{ done.note }}</div>{% endif %}
+<div class="grid side">
+  <div class="card"><h2>The day</h2>
+    <div class="table-wrap"><table class="t"><tr><th>Start</th><th>Length</th><th>Session</th></tr>
+    {% for start, length, title, what in agenda %}<tr><td class="mono">{{ start }}</td><td>{{ length }}</td><td><b>{{ title }}</b>{% if what %}<br><small class="muted">{{ what }}</small>{% endif %}</td></tr>{% endfor %}</table></div>
+    <p class="hint">Times are from the start of the day. Live-online workshops use the same plan, with the kit shipped to you first.</p></div>
+  <div class="stack">
+    <div class="card"><h2>Bring</h2><ul style="margin:0;padding-left:18px">{% for b in bring %}<li>{{ b }}</li>{% endfor %}</ul></div>
+    <div class="card"><h2>Book a place</h2><p style="margin:0">Email <a href="mailto:{{ config.SUPPORT_EMAIL }}?subject=AgriSense%20Lab%20workshop">{{ config.SUPPORT_EMAIL }}</a> with your school and the dates that suit you. AgriSense Hub records your attendance here afterwards and your Level 2 certificate appears on the training page.</p></div>
+  </div>
+</div>
+{% endblock %}

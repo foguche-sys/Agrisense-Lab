@@ -3,6 +3,7 @@ from flask import Blueprint, abort, g, redirect, render_template, request, url_f
 
 from .. import auth
 from ..services import training as T
+from ..services import training_content as C
 from ..services.audit import log
 from .util import db, err, ok
 
@@ -40,10 +41,31 @@ def home():
                 err("Give the project a title and a write-up of at least 200 characters.")
             else:
                 T.submit_project(d, uid, request.form["title"].strip(), request.form["summary"].strip(), request.form.get("link"))
-                ok("Project sent. AgriSense Hub reviews it and replies by email and on this page.")
+                ok("Project sent. AgriSense Hub reviews it and replies on this page.")
+        nxt = request.form.get("next") or ""
+        if nxt.startswith("/training/module/"):
+            return redirect(nxt)
         return redirect(url_for("training.home") + (f"#{request.form.get('anchor')}" if request.form.get("anchor") else ""))
     return render_template("training/home.html", levels=T.LEVELS, prog=T.progress(d, uid), awards=T.awards(d, uid),
-                           project=T.project(d, uid), staff=_staff())
+                           project=T.project(d, uid), staff=_staff(), ideas=C.PROJECT_IDEAS, writeup=C.PROJECT_WRITEUP,
+                           rubric=C.PROJECT_RUBRIC)
+
+
+@bp.route("/module/<key>")
+def module(key):
+    prog = T.progress(db(), g.user["id"])
+    mods = prog["modules"]
+    i = next((n for n, m in enumerate(mods) if m["key"] == key), None)
+    if i is None or key not in C.GUIDES:
+        abort(404)
+    return render_template("training/module.html", m=mods[i], n=i + 1, guide=C.GUIDES[key], prog=prog,
+                           prev=mods[i - 1] if i > 0 else None, nxt=mods[i + 1] if i + 1 < len(mods) else None)
+
+
+@bp.route("/workshop")
+def workshop():
+    return render_template("training/workshop.html", agenda=C.WORKSHOP, bring=C.WORKSHOP_BRING, level=T.LEVELS[2],
+                           done=T.awards(db(), g.user["id"]).get(2))
 
 
 @bp.route("/certificate/<code>")

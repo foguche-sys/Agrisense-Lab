@@ -151,3 +151,46 @@ def test_teacher_cannot_see_others_certificates_or_admin(client, db):
     login(client, "teacher")
     assert client.get(f"/training/certificate/{a['code']}").status_code == 404
     assert client.get("/training/admin").status_code == 403
+
+
+# ---------------- lab instructions, lab sheets, course guides
+def test_every_lesson_has_lab_content_and_pages(client, db):
+    from agrisense.services.lab_content import LABS
+    codes = [r["code"] for r in db.q("SELECT code FROM lessons ORDER BY code")]
+    assert sorted(codes) == sorted(LABS)
+    login(client, "teacher")
+    for code in codes:
+        page = client.get(f"/labs/{code}").get_data(as_text=True)
+        assert "You're done when" in page and LABS[code]["hook"][:30] in page.replace("&#39;", "'"), code
+        sheet = client.get(f"/labs/{code}/sheet").get_data(as_text=True)
+        assert "Claim, evidence, reasoning" in sheet and "Name" in sheet, code
+    assert "Student instructions" in client.get(f"/teach/{ids(db)['cls']}/lessons").get_data(as_text=True)
+
+
+def test_student_sees_instructions_and_journal_links(client, db):
+    i = ids(db)
+    lid = db.val("SELECT id FROM lessons WHERE code = '1.3'")
+    if not db.val("SELECT id FROM assignments WHERE class_id = ? AND lesson_id = ?", i["cls"], lid):
+        from agrisense.db import new_id, now
+        db.insert("assignments", id=new_id("as"), class_id=i["cls"], lesson_id=lid, created_at=now())
+        db.commit()
+    login_student(client, db)
+    home = client.get("/me/").get_data(as_text=True)
+    assert "/labs/1.3" in home
+    lab = client.get("/labs/1.3").get_data(as_text=True)
+    assert "Open our journal" in lab and "Print lab sheet" in lab
+
+
+def test_course_module_guides_and_workshop(client, db):
+    from agrisense.services.training import MODULES
+    from agrisense.services.training_content import GUIDES
+    assert [m[0] for m in MODULES] == list(GUIDES)
+    for key, _, _, steps in MODULES:
+        assert {s for s, _ in steps} == set(GUIDES[key]["steps"]), key
+    tok = login(client, "teacher")
+    page = client.get("/training/module/m2").get_data(as_text=True)
+    assert "Success looks like" in page and "If something goes wrong" in page
+    r = client.post("/training/", data={"_csrf": tok, "do": "step", "item": "m2.power", "on": "1", "next": "/training/module/m2"})
+    assert r.headers["Location"].endswith("/training/module/m2")
+    assert "Wiring the Trainer" in client.get("/training/workshop").get_data(as_text=True)
+    assert client.get("/training/module/nope").status_code == 404

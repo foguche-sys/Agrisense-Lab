@@ -17,7 +17,7 @@
 <div class="meter" style="margin-bottom:16px" aria-hidden="true"><span style="width:{{ prog.pct }}%"></span></div>
 <div class="grid g2">
   {% for m in prog.modules %}
-  <div class="card"><div class="row between"><h3 style="margin:0">{{ loop.index }} · {{ m.title }}</h3>
+  <div class="card"><div class="row between"><h3 style="margin:0"><a href="{{ url_for('training.module', key=m.key) }}">{{ loop.index }} · {{ m.title }}</a></h3>
       {% if m.complete %}<span class="pill ok">Done</span>{% else %}<small class="muted">{{ m.minutes }} min</small>{% endif %}</div>
     <div class="stack" style="gap:6px;margin-top:10px">
     {% for s in m.steps %}
@@ -25,7 +25,8 @@
         <input type="hidden" name="on" value="{{ '0' if s.done else '1' }}"><input type="hidden" name="anchor" value="level1">
         <span style="flex:1;{{ 'color:var(--muted);text-decoration:line-through' if s.done }}">{{ s.text }}</span>
         <button class="btn small {{ '' if s.done else 'primary' }}">{{ 'Undo' if s.done else 'Done' }}</button></form>
-    {% endfor %}</div></div>
+    {% endfor %}</div>
+    <a class="btn small" style="margin-top:10px" href="{{ url_for('training.module', key=m.key) }}">Open the guide</a></div>
   {% endfor %}
 </div>
 
@@ -33,13 +34,18 @@
   <div class="card" id="level2"><h2>Level 2 · Hands-on workshop</h2>
     {% if awards.get(2) %}<p><span class="pill ok">Attended</span> {{ awards[2].note }}</p>
     {% else %}<p>A one-day workshop (about 6 hours), in person or live online: wire sensors, set up field nodes and the gateway, and run the irrigation and AI lessons with other teachers.</p>
+    <p><a class="btn small" href="{{ url_for('training.workshop') }}">See the day's agenda</a></p>
     <p class="muted" style="margin:0">To join one, email <a href="mailto:{{ config.SUPPORT_EMAIL }}?subject=AgriSense%20Lab%20workshop">{{ config.SUPPORT_EMAIL }}</a>. AgriSense Hub records your attendance here after the workshop.</p>{% endif %}</div>
   <div class="card" id="level3"><h2>Level 3 · Certified AgriSense teacher</h2>
     {% if awards.get(3) %}<p><span class="pill ok">Certified</span></p>
     {% elif project and project.status == 'submitted' %}<p><span class="pill info">Project sent</span> “{{ project.title }}” is waiting for review.</p>
     {% else %}
       {% if project and project.status == 'returned' %}<div class="banner warn"><b>Returned for changes.</b> {{ project.feedback }}</div>{% endif %}
-      <p>Run an AgriSense project with your class (for example a full irrigation unit, or lessons 2.1–2.5), then write up what students did and learned and what you would change.</p>
+      <p>Run an AgriSense project with your class, then write it up. Some ideas:</p>
+      <ul style="padding-left:18px">{% for i in ideas %}<li>{{ i }}</li>{% endfor %}</ul>
+      <details style="margin-bottom:12px"><summary>What to put in the write-up, and how it is reviewed</summary>
+        <ol style="padding-left:18px">{% for h, t in writeup %}<li><b>{{ h }}</b>: {{ t }}</li>{% endfor %}</ol>
+        <table class="t"><tr><th>We look for</th><th>That means</th></tr>{% for h, t in rubric %}<tr><td><b>{{ h }}</b></td><td>{{ t }}</td></tr>{% endfor %}</table></details>
       {% if awards.get(2) %}
       <form method="post">{{ csrf() }}<input type="hidden" name="do" value="project"><input type="hidden" name="anchor" value="level3">
         <div class="field"><label for="pt">Project title</label><input id="pt" name="title" maxlength="120" required></div>

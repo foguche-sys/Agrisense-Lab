@@ -9,6 +9,7 @@
   <div class="card"><div class="row between"><span class="eyebrow">Lab {{ l.code }}</span><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data','ai':'AI Lab'}.get(l.equipment, l.equipment) }}</span></div>
     <h3>{{ l.title }}</h3><p class="muted">{{ l.summary }}</p><small class="faint">{{ l.duration }} · {{ l.standards }}</small>
     <ol style="padding-left:18px;font-size:14px">{% for p in l.parts|jload %}<li>{{ p }}</li>{% endfor %}</ol>
+    <p class="row" style="gap:6px;margin:0 0 10px"><a class="btn small" href="{{ url_for('labs.lab', code=l.code) }}">Student instructions</a><a class="btn small" href="{{ url_for('labs.sheet', code=l.code) }}">Print lab sheet</a></p>
     {% if l.id in done %}<span class="pill ok">Assigned</span>
     {% elif allowed('classes.manage', class_id=cls.id) %}
     <details><summary>Assign to {{ cls.name }}</summary>

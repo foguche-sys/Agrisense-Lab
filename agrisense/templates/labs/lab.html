@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% block title %}Lab {{ lesson.code }} · {{ lesson.title }}{% endblock %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Lab {{ lesson.code }} · {{ lesson.duration }}{% if team %} · {{ team.name }}{% endif %}</div><h1>{{ lesson.title }}</h1></div>
+  <div class="row">
+    <a class="btn" href="{{ url_for('labs.sheet', code=lesson.code) }}">Print lab sheet</a>
+    {% if tool %}<a class="btn" href="{{ url_for(tool[0]) }}">{{ tool[1] }}</a>{% endif %}
+    {% if assignment %}<a class="btn primary" href="{{ url_for('student.journal', aid=assignment.id) }}">Open our journal</a>{% endif %}</div></div>
+<div class="banner info lab-hook"><b>The challenge</b> {{ c.hook }}</div>
+<div class="grid side">
+  <div class="stack">
+    <div class="card"><div class="eyebrow">Your goal</div><h2 style="margin-top:4px">{{ c.goal }}</h2></div>
+    {% for s in c.steps %}
+    <div class="card lab-step"><div class="row between"><h3 style="margin:0"><span class="step-no">{{ loop.index }}</span>{{ s.title }}</h3></div>
+      <ul style="margin:10px 0">{% for d in s.do %}<li>{{ d }}</li>{% endfor %}</ul>
+      <div class="done-when"><b>You're done when:</b> {{ s.check }}</div></div>
+    {% endfor %}
+    <div class="card"><h2>Data table</h2>
+      <div class="table-wrap"><table class="t"><tr>{% for h in c.table %}<th>{{ h }}</th>{% endfor %}</tr>
+      {% for r in c.rows %}<tr><td><b>{{ r }}</b></td>{% for h in c.table[1:] %}<td></td>{% endfor %}</tr>{% endfor %}</table></div>
+      <p class="hint">Fill it in on the printed sheet, or in the data table of your journal.</p></div>
+    <div class="card"><h2>Think and explain</h2><ol style="padding-left:18px;margin:0">{% for q in c.questions %}<li style="margin-bottom:6px">{{ q }}</li>{% endfor %}</ol>
+      {% if assignment %}<p class="hint">Write your answers as claim, evidence and reasoning in your <a href="{{ url_for('student.journal', aid=assignment.id) }}">journal</a>.</p>{% endif %}</div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>You need</h2><ul style="margin:0;padding-left:18px">{% for n in c.need %}<li>{{ n }}</li>{% endfor %}</ul></div>
+    {% if c.safety %}<div class="card" style="border-color:var(--warn)"><h2 style="color:var(--warn-ink)">Safety</h2><ul style="margin:0;padding-left:18px">{% for n in c.safety %}<li>{{ n }}</li>{% endfor %}</ul></div>{% endif %}
+    <div class="card"><h2>Words to know</h2>{% for w, d in c.words.items() %}<p style="margin:0 0 8px"><b>{{ w }}</b>: {{ d }}</p>{% endfor %}</div>
+    <div class="card advisor ok"><div class="eyebrow">Finished early?</div><h3 style="margin:4px 0 0">{{ c.challenge }}</h3></div>
+  </div>
+</div>
+{% endblock %}

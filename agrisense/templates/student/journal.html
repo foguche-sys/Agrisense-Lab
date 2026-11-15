@@ -1,7 +1,7 @@
 {% extends "base.html" %}{% block title %}Lab {{ a.code }}{% endblock %}
 {% from "partials/macros.html" import csrf with context %}
 {% block body %}
-<div class="page-head"><div><div class="eyebrow">Lab {{ a.code }} · {{ team.name }}</div><h1>{{ a.title }}</h1><p class="muted" style="margin:0">{{ a.summary }}</p></div>
+<div class="page-head"><div><div class="eyebrow">Lab {{ a.code }} · {{ team.name }}</div><h1>{{ a.title }}</h1><p class="muted" style="margin:0">{{ a.summary }} <a href="{{ url_for('labs.lab', code=a.code) }}">Lab instructions</a> · <a href="{{ url_for('labs.sheet', code=a.code) }}">Print lab sheet</a></p></div>
   <span class="pill {{ 'ok' if j.status == 'graded' else ('info' if j.status == 'submitted' else ('warn' if j.status == 'returned' else '')) }}">{{ j.status }}{% if j.score is not none %} · {{ j.score }}/{{ a.points }}{% endif %}</span></div>
 {% if j.feedback %}<div class="banner warn"><b>Teacher feedback</b> {{ j.feedback }}</div>{% endif %}
 <div class="grid side">

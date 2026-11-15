@@ -1,0 +1,28 @@
+{% extends "base.html" %}{% block title %}Lab sheet {{ lesson.code }}{% endblock %}
+{% block body %}
+<div class="row no-print" style="justify-content:space-between;margin-bottom:14px">
+  <a class="btn" href="{{ url_for('labs.lab', code=lesson.code) }}">Back to the lab</a>
+  <span class="muted">Print with your browser: Ctrl+P (Windows, Chromebook) or ⌘P (Mac). Two pages.</span></div>
+<div class="sheet">
+  <div class="sheet-head"><div><div class="eyebrow">AgriSense Lab · Lab {{ lesson.code }}</div><h1>{{ lesson.title }}</h1></div>
+    <table class="sheet-who"><tr><td>Name</td><td class="line"></td></tr><tr><td>Team</td><td class="line">{{ team.name if team else '' }}</td></tr><tr><td>Date</td><td class="line"></td></tr></table></div>
+  <p class="sheet-hook"><b>The challenge:</b> {{ c.hook }}</p>
+  <p><b>Goal:</b> {{ c.goal }} <span class="muted">({{ lesson.duration }})</span></p>
+  {% if c.safety %}<p class="sheet-safety"><b>Safety:</b> {{ c.safety|join(' ') }}</p>{% endif %}
+  <h2>Steps</h2>
+  {% for s in c.steps %}<div class="sheet-step"><span class="box"></span><div><b>{{ loop.index }}. {{ s.title }}.</b> {{ s.do|join(' ') }}<br><small class="muted">Done when: {{ s.check }}</small></div></div>{% endfor %}
+  {% if lesson.code in ('1.1','1.3','2.1') %}<h2>My prediction (before you look)</h2><div class="lines"><div></div><div></div></div>{% endif %}
+  <h2>Data</h2>
+  <table class="sheet-table"><tr>{% for h in c.table %}<th>{{ h }}</th>{% endfor %}</tr>
+    {% for r in c.rows %}<tr><td>{{ r }}</td>{% for h in c.table[1:] %}<td></td>{% endfor %}</tr>{% endfor %}
+    {% for i in range(2) %}<tr>{% for h in c.table %}<td>&nbsp;</td>{% endfor %}</tr>{% endfor %}</table>
+  <h2>Think and explain</h2>
+  {% for q in c.questions %}<p class="sheet-q">{{ loop.index }}. {{ q }}</p><div class="lines"><div></div><div></div><div></div></div>{% endfor %}
+  <h2>Claim, evidence, reasoning</h2>
+  <p class="sheet-q"><b>Claim</b> (what did you find out?)</p><div class="lines"><div></div><div></div></div>
+  <p class="sheet-q"><b>Evidence</b> (which numbers show it?)</p><div class="lines"><div></div><div></div></div>
+  <p class="sheet-q"><b>Reasoning</b> (why do the numbers prove it?)</p><div class="lines"><div></div><div></div><div></div></div>
+  <p class="sheet-challenge"><b>Finished early?</b> {{ c.challenge }}</p>
+  <p class="sheet-words">{% for w, d in c.words.items() %}<b>{{ w }}</b>: {{ d }} {% endfor %}</p>
+</div>
+{% endblock %}

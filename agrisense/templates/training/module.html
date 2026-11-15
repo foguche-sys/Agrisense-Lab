@@ -1,0 +1,30 @@
+{% extends "base.html" %}{% block title %}{{ m.title }} · Teacher training{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Level 1 · Module {{ n }} of {{ prog.modules|length }} · {{ m.minutes }} min</div><h1>{{ m.title }}</h1>
+  <p class="muted" style="margin:0">{{ guide.intro }}</p></div>
+  <a class="btn" href="{{ url_for('training.home') }}#level1">All modules</a></div>
+<div class="banner info"><b>Why it matters in class</b> {{ guide.why }}</div>
+<div class="grid side">
+  <div class="stack">
+    {% for s in m.steps %}{% set key = s.key.split('.')[1] %}{% set how, success = guide.steps[key] %}
+    <div class="card lab-step"><div class="row between"><h3 style="margin:0"><span class="step-no">{{ loop.index }}</span>{{ s.text }}</h3>
+        {% if s.done %}<span class="pill ok">Done</span>{% endif %}</div>
+      <p style="margin:10px 0">{{ how }}</p>
+      <div class="done-when"><b>Success looks like:</b> {{ success }}</div>
+      <form method="post" action="{{ url_for('training.home') }}" style="margin-top:10px">{{ csrf() }}<input type="hidden" name="do" value="step">
+        <input type="hidden" name="item" value="{{ s.key }}"><input type="hidden" name="on" value="{{ '0' if s.done else '1' }}">
+        <input type="hidden" name="next" value="{{ url_for('training.module', key=m.key) }}">
+        <button class="btn small {{ '' if s.done else 'primary' }}">{{ 'Undo' if s.done else 'Mark done' }}</button></form></div>
+    {% endfor %}
+    <div class="row between">{% if prev %}<a class="btn" href="{{ url_for('training.module', key=prev.key) }}">← {{ prev.title }}</a>{% else %}<span></span>{% endif %}
+      {% if nxt %}<a class="btn primary" href="{{ url_for('training.module', key=nxt.key) }}">{{ nxt.title }} →</a>{% else %}<a class="btn primary" href="{{ url_for('training.home') }}">Back to training</a>{% endif %}</div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>If something goes wrong</h2>
+      {% for problem, fix in guide.trouble %}<p style="margin:0 0 10px"><b>{{ problem }}</b><br>{{ fix }}</p>{% endfor %}</div>
+    <div class="card no-print"><div class="stat-label">Your Level 1 progress</div><div class="big">{{ prog.pct }} <span class="unit">%</span></div>
+      <div class="meter"><span style="width:{{ prog.pct }}%"></span></div><small class="muted">{{ prog.done }} of {{ prog.total }} steps</small></div>
+  </div>
+</div>
+{% endblock %}
