@@ -7,6 +7,14 @@
 <div class="banner info"><b>Why it matters in class</b> {{ guide.why }}</div>
 <div class="grid side">
   <div class="stack">
+    {% if video %}{% set stem, vtitle, vmin = video %}
+    <div class="card no-print"><div class="row between"><h2 style="margin:0">Watch first: {{ vtitle }}</h2><small class="muted">{{ vmin }} min · captioned, no sound</small></div>
+      <video class="module-video" controls preload="metadata" playsinline poster="{{ url_for('static', filename='videos/' ~ stem ~ '.jpg') }}">
+        <source src="{{ url_for('static', filename='videos/' ~ stem ~ '.mp4') }}" type="video/mp4">
+        <track kind="captions" srclang="en" label="English" src="{{ url_for('static', filename='videos/' ~ stem ~ '.vtt') }}">
+        Your browser can't play this video. <a href="{{ url_for('static', filename='videos/' ~ stem ~ '.mp4') }}">Download it</a>.</video>
+      <small class="muted">Watch it once, then do the steps below and press Mark done.</small></div>
+    {% endif %}
     {% for s in m.steps %}{% set key = s.key.split('.')[1] %}{% set how, success = guide.steps[key] %}
     <div class="card lab-step"><div class="row between"><h3 style="margin:0"><span class="step-no">{{ loop.index }}</span>{{ s.text }}</h3>
         {% if s.done %}<span class="pill ok">Done</span>{% endif %}</div>

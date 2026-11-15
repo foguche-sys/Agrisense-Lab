@@ -58,7 +58,7 @@ def module(key):
     i = next((n for n, m in enumerate(mods) if m["key"] == key), None)
     if i is None or key not in C.GUIDES:
         abort(404)
-    return render_template("training/module.html", m=mods[i], n=i + 1, guide=C.GUIDES[key], prog=prog,
+    return render_template("training/module.html", m=mods[i], n=i + 1, guide=C.GUIDES[key], video=C.VIDEOS.get(key), prog=prog,
                            prev=mods[i - 1] if i > 0 else None, nxt=mods[i + 1] if i + 1 < len(mods) else None)
 
 

@@ -204,3 +204,17 @@ def test_pdf_downloads_are_linked_and_served(client, db):
         r = client.get(f"/static/downloads/{f}")
         assert r.status_code == 200 and r.data[:4] == b"%PDF"
         r.close()
+
+
+def test_module_videos_are_shown_and_served(client, db):
+    from agrisense.services.training_content import GUIDES, VIDEOS
+    login(client, "teacher")
+    for key, (stem, title, _) in VIDEOS.items():
+        assert key in GUIDES
+        page = client.get(f"/training/module/{key}").get_data(as_text=True)
+        assert f"videos/{stem}.mp4" in page and f"videos/{stem}.vtt" in page and title in page
+        for ext in ("mp4", "vtt", "jpg"):
+            r = client.get(f"/static/videos/{stem}.{ext}")
+            assert r.status_code == 200, (stem, ext)
+            r.close()
+    assert "module-video" not in client.get("/training/module/m1").get_data(as_text=True)

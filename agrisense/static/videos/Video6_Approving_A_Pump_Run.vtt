@@ -1,0 +1,31 @@
+WEBVTT
+
+00:05.000 --> 00:21.000
+Every watering is a small experiment 1. A team predicts the moisture after watering 2. You approve the run 3. The pump runs for a fixed time, then stops on its own 4. Ten minutes later the real number is logged next to the prediction
+
+00:21.000 --> 00:30.000
+A student opens Our tray. They choose how many seconds to water and type a prediction: the moisture they expect afterwards.
+
+00:30.000 --> 00:38.269
+They add a reason, using the numbers on the screen, and press Send to teacher.
+
+00:38.269 --> 00:45.769
+The request is waiting for you. Nothing runs until a teacher approves it.
+
+00:45.769 --> 00:55.769
+On the live bench you see each request: team, tray, seconds, the moisture now and the prediction. Read the reason, then press Approve or Decline.
+
+00:55.769 --> 01:04.807
+Approved. The pump runs for exactly those seconds, within the school limit, then stops on its own.
+
+01:04.807 --> 01:18.807
+The kit refuses a run on its own when… Requests are off or paused for the class The seconds are over the school limit The team already has a request waiting It is outside class hours Another tray is being watered, or the pump is resting The tank is LOW or the pump node is offline
+
+01:18.807 --> 01:27.807
+Ten minutes later the soil has soaked up the water. The decision log puts the real moisture next to the prediction.
+
+01:27.807 --> 01:37.230
+Team 1 predicted 20.5 % and got 21.2 %. That gap is what students explain in their journal.
+
+01:37.230 --> 01:52.307
+Teaching tip Before you approve, ask the team: "Why did you predict that?" Decline vague reasons. Approve reasons that use numbers After the check, ask: "Was your guess too high or too low? Why?"

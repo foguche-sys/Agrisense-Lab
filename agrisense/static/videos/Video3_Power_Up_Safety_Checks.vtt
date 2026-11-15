@@ -1,0 +1,34 @@
+WEBVTT
+
+00:05.000 --> 00:20.076
+You will need The Trainer board on a dry table The 12 V adapter labeled "AgriSense Trainer only" A multimeter set to DC volts, 20 V range The website open on the Teach page
+
+00:20.076 --> 00:28.076
+This is the Trainer board. The power panel sits in the back-left corner. Keep the water station tray beside the board, never on it.
+
+00:28.076 --> 00:39.038
+Check 1: plug the 12 V adapter into the DC jack on the power panel first, then plug it into the wall.
+
+00:39.038 --> 00:47.692
+Success: the rail LEDs light up and the controller screen comes on within a few seconds.
+
+00:47.692 --> 01:03.538
+Nothing lights up? Check the wall socket and the adapter plug Check the fuse on the power panel (3 A with the grow light fitted) Screen stays dark? Re-seat the controller USB-C cable and power cycle
+
+01:03.538 --> 01:12.538
+Check 2: set the meter to DC volts. Black probe into the black GND post. It stays there for all three readings.
+
+01:12.538 --> 01:21.538
+Red probe into TP1, then TP2, then TP3. You should read about 12 V, 5.0 V and 3.3 V.
+
+01:21.538 --> 01:35.846
+Reading the numbers TP1 about 12 V (the adapter) TP2 5.0 V, within ±0.2 V TP3 3.3 V, within ±0.2 V TP2 not 5.0 V? Connect nothing and email support before class
+
+01:35.846 --> 01:44.115
+Check 3: on the Teach page, open the live bench and press STOP ALL PUMPS.
+
+01:44.115 --> 01:53.115
+Success: STOP goes to every pump in the class. Every output shows OFF within a few seconds, and the activity log records the STOP.
+
+01:53.115 --> 02:09.115
+Recap Power: adapter into the DC jack, then the wall. LEDs and screen on Rails: about 12 V, 5.0 V and 3.3 V STOP: every output OFF and logged Tick the three steps in Training, Module 2

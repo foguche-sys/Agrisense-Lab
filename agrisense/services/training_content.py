@@ -98,6 +98,13 @@ GUIDES = {
     },
 }
 
+# Short captioned videos shown on a module page: (file stem in static/videos, title, minutes)
+VIDEOS = {
+    "m2": ("Video3_Power_Up_Safety_Checks", "Power up and the three safety checks", 2),
+    "m5": ("Video6_Approving_A_Pump_Run", "Approving a pump run: predict, water, check", 2),
+    "m6": ("Video7_When_It_Goes_Wrong", "When it goes wrong: offline, probe out, NO FLOW", 2),
+}
+
 
 # ---------------------------------------------------------------- Level 2: the workshop day (about 6 hours)
 WORKSHOP = [

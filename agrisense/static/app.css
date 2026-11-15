@@ -246,3 +246,5 @@ details summary { cursor: pointer; font-weight: 600; }
 .sheet-words { font-size: 12px; color: #333; margin-top: 10px; }
 @media print { .foot { display: none !important; } .sheet { border: 0; padding: 0; max-width: none; } .sheet h2 { break-after: avoid; } .sheet-table, .sheet-step { break-inside: avoid; } }
 @media print { .btn, button { display: none !important; } }
+
+.module-video{width:100%;border-radius:10px;margin:12px 0 6px;background:#000;aspect-ratio:16/9}

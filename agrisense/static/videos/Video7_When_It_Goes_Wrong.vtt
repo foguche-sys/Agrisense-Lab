@@ -1,0 +1,31 @@
+WEBVTT
+
+00:05.000 --> 00:19.692
+Three problems cause most calls for help A node shows OFFLINE A moisture reading near 0 %: the probe is out of the soil NO FLOW: the pump runs but water doesn't move
+
+00:19.692 --> 00:26.807
+Problem 1: an OFFLINE alert. This node hasn't reported for 15 minutes.
+
+00:26.807 --> 00:35.076
+The Devices page shows which node it is and when it was last heard from.
+
+00:35.076 --> 00:51.076
+Three checks, in order Is the node's power on? Is the gateway powered and on Wi-Fi? Is the node within range of the gateway? Everything offline? The school Wi-Fi or the gateway is down: use simulation mode today
+
+00:51.076 --> 01:00.076
+Problem 2: tray A reads 0.4 % and says wilting risk. Soil this dry is rare. Usually the probe has been pulled out of the soil.
+
+01:00.076 --> 01:10.076
+AI Lab, lesson 2.3 Sensor check, flags it: the reading dropped 11.5 points at once, and a value this low suggests the probe is out of the soil.
+
+01:10.076 --> 01:22.461
+The fix Push the probe back into the soil, fully Wait for the next reading Don't water on a near-0 % reading until you've checked the probe
+
+01:22.461 --> 01:31.461
+Problem 3: NO FLOW. The pressure stayed low after the pump started, so the kit stopped the pump within 2 seconds.
+
+01:31.461 --> 01:44.461
+Check, in order Is the pump under water? Is the hose kinked, or off its barb? Is the reservoir full, with the float switch up? Then do one 10-second test run BLOCKED instead? Pressure went over 150 kPa: look for a blocked hose or emitter
+
+01:44.461 --> 01:57.230
+Still stuck? The support email is at the bottom of every page Include the class name, the device serial and a photo Keep teaching with simulation mode meanwhile
