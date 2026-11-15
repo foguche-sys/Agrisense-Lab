@@ -4,13 +4,12 @@
   <div>
     <div class="eyebrow">AgriSense Lab · by AgriSense Hub</div>
     <h1>Students measure real soil, decide when to water, and check whether they were right.</h1>
-    <p class="lead">A soil bench with five trays and real probes, a Trainer Board with a pump, fan, pressure and tank sensors, and this platform: live readings, guided labs, an Field Studio for building dashboards, and data your students can download.</p>
+    <p class="lead">A hands-on Trainer board with a real pump, fan and sensors, a student Arduino your class codes from a Chromebook, and a soil bench of five soils. This website ties it together: live readings, step-by-step lessons, an AI Lab, and dashboards students build themselves.</p>
     <div class="row" style="margin-top:20px">
-      <a class="btn primary" href="{{ url_for('public.signup') }}">Start a free pilot</a>
-      <a class="btn" href="{{ url_for('public.quote') }}">Get a quote for your district</a>
+      <a class="btn primary" href="{{ url_for('public.pilot') }}">Join the fall 2027 pilot</a>
+      <a class="btn" href="{{ url_for('public.kits') }}">See kits &amp; pricing</a>
       <a class="btn ghost" href="{{ url_for('public.student_code') }}">I'm a student →</a>
     </div>
-    <p style="margin-top:12px"><a href="{{ url_for('public.pilot') }}"><b>Missouri teachers: join the fall 2027 pilot →</b></a></p>
   </div>
   <div class="card">
     <div class="row between"><b>Period 3 · live bench</b><span class="pill ok"><span class="dot"></span>Online</span></div>
@@ -27,8 +26,8 @@
 </section>
 
 <section id="how" class="grid g4" style="margin-top:20px">
-  {% for t, d in [('Build', 'Wire the probe, pump and sensors on the Trainer Board. Every plug is keyed, so 12 V only goes where it should.'),
-                  ('Measure', 'Probes read moisture, temperature, EC and pH every few minutes. The gateway sends them here.'),
+  {% for t, d in [('Build', 'Wire the probe, pump and sensors on the Trainer board. Every plug is keyed, so 12 V only goes where it should.'),
+                  ('Measure', 'The soil probe reads moisture, temperature, EC and pH in seconds, and the readings appear here live.'),
                   ('Decide', 'The advisor shows each tray\'s refill point for its soil and crop. Teams predict the result, request water, and the teacher approves.'),
                   ('Check', 'The probe reads the tray after the water soaks in, and the decision log shows prediction against result.')] %}
   <div class="card"><div class="eyebrow">{{ loop.index }}</div><h3>{{ t }}</h3><p class="muted" style="margin:0">{{ d }}</p></div>
