@@ -1,0 +1,19 @@
+{% macro ai_head(cls, team, trays, tray, is_student, here, title, lesson, q) %}
+<div class="page-head"><div><div class="eyebrow">AI Lab · {{ team.name if team else cls.name }}{% if lesson %} · Lesson {{ lesson }}{% endif %}</div><h1>{{ title }}</h1></div>
+  {% if not is_student and trays and here in ('predict','sensor') %}
+  <form method="get" class="filters" style="margin:0">{% for k, v in q.items() if k not in ('tray',) %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+    {% for k in ('metric','hours') if request.args.get(k) %}<input type="hidden" name="{{ k }}" value="{{ request.args.get(k) }}">{% endfor %}
+    <label for="trsel" class="muted">Tray / node</label>
+    <select id="trsel" name="tray">{% for t in trays %}<option value="{{ t.id }}" {{ 'selected' if tray and t.id == tray.id }}>{{ t.letter }} · {{ t.label }}</option>{% endfor %}</select>
+    <button class="btn small">Show</button></form>{% endif %}
+</div>
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> The AI Lab is using simulated readings today.</div>{% endif %}
+<nav class="tabs" aria-label="AI Lab">
+  <a href="{{ url_for('ai.hub', **q) }}" class="{{ 'on' if here == 'hub' }}">AI Lab</a>
+  <a href="{{ url_for('ai.predict', **q) }}" class="{{ 'on' if here == 'predict' }}">2.1 Predict watering</a>
+  <a href="{{ url_for('ai.leaf', **q) }}" class="{{ 'on' if here == 'leaf' }}">2.2 Leaf health</a>
+  <a href="{{ url_for('ai.sensor', **q) }}" class="{{ 'on' if here == 'sensor' }}">2.3 Sensor check</a>
+  <a href="{{ url_for('ai.zones', **q) }}" class="{{ 'on' if here == 'zones' }}">2.4 Zones</a>
+  <a href="{{ url_for('ai.decide', **q) }}" class="{{ 'on' if here == 'decide' }}">2.5 Who decides?</a>
+</nav>
+{% endmacro %}

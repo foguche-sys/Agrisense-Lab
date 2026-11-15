@@ -39,7 +39,7 @@
   <div class="card table-wrap"><table class="t">
     <tr><th>#</th><th>Lesson</th><th>Uses</th><th>Time</th><th>Standards</th></tr>
     {% for l in lessons %}<tr><td class="mono">{{ l.code }}</td><td><b>{{ l.title }}</b><br><small>{{ l.summary }}</small></td>
-      <td><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data'}[l.equipment] }}</span></td><td>{{ l.duration }}</td><td><small class="mono">{{ l.standards }}</small></td></tr>{% endfor %}
+      <td><span class="pill">{{ {'bench':'Soil bench','trainer':'Trainer Board','data':'Data','ai':'AI Lab'}.get(l.equipment, l.equipment) }}</span></td><td>{{ l.duration }}</td><td><small class="mono">{{ l.standards }}</small></td></tr>{% endfor %}
   </table></div>
 </section>
 

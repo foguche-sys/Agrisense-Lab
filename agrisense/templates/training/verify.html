@@ -1,0 +1,10 @@
+{% extends "base.html" %}{% block title %}Check a certificate{% endblock %}
+{% block body %}
+<div class="card narrow" style="margin:30px auto;max-width:560px">
+  <div class="eyebrow">AgriSense Lab · Teacher training</div><h1>Certificate check</h1>
+  {% if a %}<p><span class="pill ok">Valid</span></p>
+    <p><b>{{ a.name }}</b> completed <b>Level {{ a.level }}: {{ level.title }}</b>, {{ a.hours|round|int }} hours, on {{ a.awarded_at[:10] }}.</p>
+    <p class="mono muted" style="margin:0">{{ a.code }}</p>
+  {% else %}<p><span class="pill bad">Not found</span></p><p>No certificate has the code <span class="mono">{{ code }}</span>. Check the letters and try again.</p>{% endif %}
+</div>
+{% endblock %}

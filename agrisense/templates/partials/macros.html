@@ -59,6 +59,7 @@
   <a href="{{ url_for('teacher.gradebook', cid=cls.id) }}" class="{{ 'on' if here == 'grades' }}">Gradebook</a>
   <a href="{{ url_for('teacher.teams', cid=cls.id) }}" class="{{ 'on' if here == 'teams' }}">Teams & students</a>
   <a href="{{ url_for('studio.dashboards') }}">Field Studio</a>
+  <a href="{{ url_for('ai.hub', **{'class': cls.id}) }}">AI Lab</a>
 </nav>
 {% endmacro %}
 

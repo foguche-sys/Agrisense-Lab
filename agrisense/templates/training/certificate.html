@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% block title %}Certificate {{ a.code }}{% endblock %}
+{% block body %}
+<div class="row" style="justify-content:flex-end;margin-bottom:12px"><a class="btn" href="{{ url_for('training.home') }}">Back</a></div>
+<div class="card" style="max-width:820px;margin:0 auto;padding:48px;text-align:center;border:3px double var(--brand)">
+  <div class="eyebrow">AgriSense Lab · Teacher training</div>
+  <h1 style="margin:10px 0 4px">Certificate of completion</h1>
+  <p class="muted">This certifies that</p>
+  <p style="font-size:30px;font-weight:700;margin:6px 0">{{ a.name }}</p>
+  <p>completed <b>Level {{ a.level }}: {{ level.title }}</b><br>{{ level.format }}</p>
+  <p class="big" style="margin:10px 0">{{ a.hours|round|int }} <span class="unit">hours of professional learning</span></p>
+  <p class="muted" style="margin:0">{{ level.outcome }}</p>
+  <p style="margin-top:22px">Awarded {{ a.awarded_at[:10] }}{% if a.note %} · {{ a.note }}{% endif %}</p>
+  <p class="mono" style="margin:0">Verification code {{ a.code }}</p>
+  <small class="muted">Check it at {{ url_for('training.verify', code=a.code, _external=True) }}</small>
+  <hr><small class="muted">Issued by AgriSense Hub. Whether these hours count toward a license or re-certification is decided by the teacher's district or state.</small>
+</div>
+<p class="hint" style="text-align:center;margin-top:12px">To print or save as PDF: use your browser's Print (Ctrl+P or ⌘P).</p>
+{% endblock %}

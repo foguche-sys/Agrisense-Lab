@@ -211,7 +211,7 @@ CREATE TABLE IF NOT EXISTS lessons (
   kind TEXT NOT NULL,                    -- lab | activity
   summary TEXT NOT NULL,
   duration TEXT NOT NULL,
-  equipment TEXT NOT NULL,               -- bench | trainer | data
+  equipment TEXT NOT NULL,               -- bench | trainer | data | ai
   standards TEXT NOT NULL,               -- comma list
   parts TEXT NOT NULL DEFAULT '[]'       -- JSON list of part titles
 );
@@ -321,3 +321,62 @@ CREATE TABLE IF NOT EXISTS audit_log (
   created_at TEXT NOT NULL
 );
 CREATE INDEX IF NOT EXISTS ix_audit_school ON audit_log(school_id, created_at);
+
+-- AI Lab: predictions checked against what really happened, and saved model results
+CREATE TABLE IF NOT EXISTS ai_predictions (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL REFERENCES classes(id),
+  tray_id TEXT NOT NULL REFERENCES trays(id),
+  team_id TEXT,
+  user_id TEXT NOT NULL,
+  created_at TEXT NOT NULL,
+  moisture_now REAL, rate REAL, r2 REAL, refill REAL,
+  predicted_hours REAL,                  -- the line's answer
+  predicted_at TEXT,                     -- when the line says the refill point is reached
+  student_hours REAL,                    -- the students' own guess first
+  actual_at TEXT, error_hours REAL,      -- filled in by the check
+  status TEXT NOT NULL DEFAULT 'open',   -- open | checked | watered | expired
+  note TEXT
+);
+
+CREATE TABLE IF NOT EXISTS ai_results (
+  id TEXT PRIMARY KEY,
+  class_id TEXT NOT NULL REFERENCES classes(id),
+  team_id TEXT,
+  user_id TEXT NOT NULL,
+  kind TEXT NOT NULL,                    -- leaf
+  data TEXT NOT NULL DEFAULT '{}',
+  created_at TEXT NOT NULL
+);
+
+-- Teacher training (professional learning)
+CREATE TABLE IF NOT EXISTS pd_progress (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  item TEXT NOT NULL,
+  done_at TEXT NOT NULL,
+  UNIQUE (user_id, item)
+);
+
+CREATE TABLE IF NOT EXISTS pd_awards (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  level INTEGER NOT NULL,
+  hours REAL NOT NULL,
+  code TEXT NOT NULL UNIQUE,             -- printed on the certificate; anyone can verify it
+  awarded_at TEXT NOT NULL,
+  awarded_by TEXT,
+  note TEXT,
+  UNIQUE (user_id, level)
+);
+
+CREATE TABLE IF NOT EXISTS pd_projects (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL REFERENCES users(id),
+  title TEXT NOT NULL,
+  summary TEXT NOT NULL,
+  link TEXT,
+  status TEXT NOT NULL DEFAULT 'submitted',  -- submitted | approved | returned
+  submitted_at TEXT NOT NULL,
+  reviewed_by TEXT, reviewed_at TEXT, feedback TEXT
+);

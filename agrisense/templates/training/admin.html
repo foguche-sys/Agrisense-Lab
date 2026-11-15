@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% block title %}Training · staff{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">AgriSense Hub staff</div><h1>Teacher training</h1></div><a class="btn" href="{{ url_for('training.home') }}">Teacher view</a></div>
+{% if projects %}<div class="card" style="margin-bottom:20px"><h2>Level 3 projects to review</h2>
+  {% for p in projects %}<div style="padding:12px 0;border-bottom:1px solid var(--line-2)">
+    <b>{{ p.title }}</b> · {{ p.name }} <small class="muted">{{ p.email }} · {{ p.submitted_at|ago }}</small>
+    <p style="white-space:pre-wrap;margin:8px 0">{{ p.summary }}</p>{% if p.link %}<p><a href="{{ p.link }}" target="_blank" rel="noopener">{{ p.link }}</a></p>{% endif %}
+    <form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="review"><input type="hidden" name="project_id" value="{{ p.id }}">
+      <input name="feedback" placeholder="Feedback (sent back if returned)" maxlength="1000" style="flex:1">
+      <button class="btn primary" name="approve" value="1">Approve</button><button class="btn" name="approve" value="0">Return</button></form></div>{% endfor %}</div>{% endif %}
+<div class="card"><h2>Teachers</h2>
+  <div class="table-wrap"><table class="t"><tr><th>Teacher</th><th class="num">Level 1 steps</th>{% for n in levels %}<th>Level {{ n }}</th>{% endfor %}<th>Record workshop (Level 2)</th></tr>
+  {% for t in teachers %}<tr><td><b>{{ t.name }}</b><br><small class="muted">{{ t.email }}</small></td><td class="num">{{ t.steps }}/{{ total }}</td>
+    {% for n in levels %}<td>{% if t.awards.get(n) %}<a class="pill ok" href="{{ url_for('training.certificate', code=t.awards[n].code) }}">{{ t.awards[n].awarded_at[:10] }}</a>{% else %}<small class="muted">—</small>{% endif %}</td>{% endfor %}
+    <td>{% if not t.awards.get(2) %}<form method="post" class="row" style="gap:6px">{{ csrf() }}<input type="hidden" name="do" value="workshop"><input type="hidden" name="user_id" value="{{ t.id }}">
+      <input type="date" name="date" aria-label="Workshop date"><input name="place" placeholder="Where" maxlength="60" style="width:120px"><button class="btn small">Attended</button></form>{% endif %}</td></tr>
+  {% else %}<tr><td colspan="6" class="empty">No teachers yet.</td></tr>{% endfor %}</table></div></div>
+{% endblock %}

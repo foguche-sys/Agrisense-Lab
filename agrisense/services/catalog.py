@@ -20,18 +20,35 @@ LESSONS = [
      "2 × 45 min", "trainer", "ETS1-3,SEP-2,SEP-6", ["Choose a threshold", "Write the Action", "Test, check, adjust"]),
     ("1.9", "Field decision report", "lab", "Use a week of bench data to recommend a watering schedule for each soil. Present to the class.",
      "2 × 45 min", "data", "HS-ESS3-4,SEP-7,SEP-8", ["Download data", "Analyze", "Write recommendation", "Present"]),
+    # Unit 2: AI with your own data (AI Lab). Models are trained on the class's own readings, not a ready-made dataset.
+    ("2.1", "When will my tray need water?", "lab", "Fit a line to your tray's drying curve, predict the hours until the refill point, "
+     "then let the AI Lab check your prediction against what really happened.",
+     "2 × 45 min", "ai", "AI4K12-3,SEP-4,SEP-5,CSTA 3A-DA-12", ["Guess first", "Fit the line in the AI Lab", "Save the prediction", "Check it later", "Explain the error"]),
+    ("2.2", "Is this leaf healthy?", "lab", "Photograph healthy, yellowing and pest-damaged leaves, train an image model in Teachable Machine "
+     "and test it on photos it has never seen.",
+     "2 × 45 min", "ai", "AI4K12-1,AI4K12-3,SEP-3", ["Collect photos", "Train", "Test on new photos", "Record the results", "Find its blind spots"]),
+    ("2.3", "Is the sensor lying?", "lab", "Find bad readings (probe out of the soil, frozen values, sudden drops). Compare rules an engineer "
+     "writes in advance with a 'learned normal' band.",
+     "45 min", "ai", "AI4K12-3,SEP-4,ETS1-3", ["Pick a sensor", "Read the flags", "Rules vs learned normal", "Decide what to trust"]),
+    ("2.4", "Which beds behave alike?", "lab", "Group trays or field nodes into management zones with k-means clustering, the way precision "
+     "farms split a field into zones.",
+     "45 min", "ai", "AI4K12-2,SEP-4,HS-ESS3-4", ["Look at the four features", "Run the clustering", "Try 2 and 3 zones", "Recommend a plan per zone"]),
+    ("2.5", "Should AI decide when to water?", "activity", "Debate who should have the final say: the model, the advisor or the farmer. "
+     "Use your class's own prediction errors as evidence.",
+     "45 min", "ai", "AI4K12-5,SEP-7", ["Look at the evidence", "Take a side", "Debate", "Write your position"]),
 ]
 
 PLANS = [
-    ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9 and the Field Studio."),
+    ("pilot", "Pilot", 0, "One kit, one school, one semester. Lessons 1.1–1.9, the AI Lab (2.1–2.5) and the Field Studio."),
     ("school", "School", 120000, "Per kit per year: all lessons, unlimited classes, data exports, support."),
     ("district", "District", None, "Several schools: priced by quote, purchase order, privacy agreement, rostering."),
 ]
 
 
 def seed_catalog(db):
-    if not db.val("SELECT COUNT(*) AS n FROM lessons"):
-        for code, title, kind, summary, dur, eq, std, parts in LESSONS:
+    have = {r["code"] for r in db.q("SELECT code FROM lessons")}
+    for code, title, kind, summary, dur, eq, std, parts in LESSONS:      # adds new lessons to existing databases too
+        if code not in have:
             db.insert("lessons", id=new_id("ls"), code=code, title=title, kind=kind, summary=summary, duration=dur,
                       equipment=eq, standards=std, parts=jdump(parts))
     if not db.val("SELECT COUNT(*) AS n FROM plans"):

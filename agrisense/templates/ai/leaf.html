@@ -1,0 +1,42 @@
+{% extends "base.html" %}{% block title %}Leaf health · AI Lab{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% from "ai/_ai.html" import ai_head with context %}
+{% block body %}
+{{ ai_head(cls, team, trays, tray, is_student, 'leaf', 'Is this leaf healthy?', '2.2', q) }}
+<div class="grid side">
+  <div class="stack">
+    <div class="card"><h2>Record your test</h2>
+      <form method="post">{{ csrf() }}
+        <p class="muted" style="margin-top:0">Rows: what the leaf really was. Columns: what the model said.</p>
+        <div class="table-wrap"><table class="t"><tr><th></th>{% for c in classes %}<th class="num">said {{ c.split(' ')[0] }}</th>{% endfor %}</tr>
+        {% for i in range(classes|length) %}<tr><th>{{ classes[i] }}</th>{% for j in range(classes|length) %}
+          <td><input type="number" name="m{{ i }}{{ j }}" min="0" max="999" value="0" aria-label="{{ classes[i] }} said {{ classes[j] }}" style="width:70px"></td>{% endfor %}</tr>{% endfor %}</table></div>
+        <div class="fields" style="margin-top:12px">{% for i in range(classes|length) %}<div><label for="tr{{ i }}">Training photos: {{ classes[i].split(' ')[0] }}</label><input id="tr{{ i }}" type="number" name="train{{ i }}" min="0" max="9999" value="0"></div>{% endfor %}</div>
+        <div class="field" style="margin-top:10px"><label for="ln">What did you change since last time?</label><input id="ln" name="note" maxlength="300"></div>
+        <button class="btn primary" style="margin-top:12px">Save result</button></form></div>
+    <div class="card"><h2>{{ 'Our' if is_student else 'Class' }} results</h2>
+      {% if rows %}<div class="table-wrap"><table class="t"><tr><th>Saved</th>{% if not is_student %}<th>Team</th>{% endif %}<th class="num">Training photos</th><th class="num">Accuracy</th>{% for c in classes %}<th class="num">{{ c.split(' ')[0] }} found</th>{% endfor %}<th>Most confused</th></tr>
+      {% for r in rows %}{% set s = r.data.score %}<tr><td><small>{{ r.created_at|ago }}</small></td>{% if not is_student %}<td>{{ r.team or r.who }}</td>{% endif %}
+        <td class="num">{{ r.data.train|sum }}</td><td class="num"><b>{{ s.accuracy }} %</b></td>
+        {% for v in s.recall %}<td class="num">{{ (v ~ ' %') if v is not none else '—' }}</td>{% endfor %}
+        <td><small>{% if s.confusion %}{{ classes[s.confusion[0]].split(' ')[0] }} → {{ classes[s.confusion[1]].split(' ')[0] }} ({{ s.confusion[2] }}){% else %}none{% endif %}</small></td></tr>{% endfor %}</table></div>
+      <p class="hint">"Found" = of the test photos that really were that kind, how many the model got right (recall).</p>
+      {% else %}<p class="muted" style="margin:0">No results saved yet.</p>{% endif %}</div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>Train it in Teachable Machine</h2>
+      <ol style="padding-left:18px;margin:0">
+        <li><b>Collect.</b> Photograph leaves from your trays or the school garden: <b>healthy</b>, <b>yellowing</b> (often low nitrogen) and <b>pest damage</b>. Aim for 30 or more of each, in different light.</li>
+        <li><b>Keep some back.</b> Put 10 photos of each kind aside. The model must never see them while it trains: they are your <b>test set</b>.</li>
+        <li><b>Train.</b> Open <a href="https://teachablemachine.withgoogle.com/train/image" target="_blank" rel="noopener">Teachable Machine → Image project</a> in Chrome. Make three classes with the names below, upload the training photos and press <b>Train model</b>. It runs in the browser, so it works on Chromebooks.</li>
+        <li><b>Test.</b> Show it each test photo one at a time and write down what it guessed in the "Record your test" table.</li>
+        <li><b>Improve.</b> Look at the mistakes. Add more photos of the kind it gets wrong, retrain, test again and save the new result.</li></ol>
+      <p class="hint" style="margin-top:10px">Photos stay in your browser with Teachable Machine; nothing is uploaded to AgriSense Lab. Only the counts in the table are saved here.</p></div>
+    <div class="card"><h2>Think about it</h2>
+      <ol style="padding-left:18px;margin:0">
+        <li>Why must the test photos be kept out of training?</li>
+        <li>Your model was trained on your school's leaves. Would it work on a farm 500 miles away?</li>
+        <li>Yellow leaves can mean low nitrogen, too much water or old age. Can a photo alone tell them apart? What sensor reading would help?</li></ol></div>
+  </div>
+</div>
+{% endblock %}

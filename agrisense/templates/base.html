@@ -32,6 +32,10 @@
         {% endif %}
         {% if any_role('student','teacher','co_teacher','substitute') %}
           <a href="{{ url_for('studio.dashboards') }}" class="{{ 'on' if ep.startswith('studio.') }}">Field Studio</a>
+          <a href="{{ url_for('ai.hub') }}" class="{{ 'on' if ep.startswith('ai.') }}">AI Lab</a>
+        {% endif %}
+        {% if any_role('teacher','co_teacher','substitute','school_admin','client_admin') or (any_role('owner','support','content') and not 'student' in my_roles) %}
+          <a href="{{ url_for('training.home') }}" class="{{ 'on' if ep.startswith('training.') }}">Training</a>
         {% endif %}
         {% if my_roles|reject('in', ['parent','content','sales','finance','billing','substitute','owner','ops','support'])|list %}
           <a href="{{ url_for('data.explorer') }}" class="{{ 'on' if ep.startswith('data.') }}">Data</a>

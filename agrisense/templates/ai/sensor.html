@@ -1,0 +1,43 @@
+{% extends "base.html" %}{% block title %}Sensor check · AI Lab{% endblock %}
+{% from "ai/_ai.html" import ai_head with context %}
+{% block body %}
+{{ ai_head(cls, team, trays, tray, is_student, 'sensor', 'Is the sensor lying?', '2.3', q) }}
+<form method="get" class="filters">{% for k, v in q.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <label for="mt">Sensor</label><select id="mt" name="metric">{% for m, lab in [('moisture','Moisture'),('temp','Soil temperature'),('ec','EC (salts)'),('ph','pH')] %}<option value="{{ m }}" {{ 'selected' if m == metric }}>{{ lab }}</option>{% endfor %}</select>
+  <label for="hr">Last</label><select id="hr" name="hours">{% for h in (24, 48, 168) %}<option value="{{ h }}" {{ 'selected' if h == hours }}>{{ h }} h</option>{% endfor %}</select>
+  <button class="btn small">Check</button></form>
+<div class="grid side">
+  <div class="stack">
+    <div class="card"><h2>Tray {{ tray.letter }}: {{ metric }} readings</h2>
+      {% if chart %}{{ chart|safe }}
+      <div class="legend"><span><i style="background:var(--brand)"></i>Readings</span><span><i style="background:var(--info)"></i>Learned normal band</span><span><i style="background:var(--bad)"></i>Flagged</span></div>
+      {% else %}<p class="muted">{{ res.why or 'No readings yet.' }}</p>{% endif %}
+    </div>
+    <div class="card"><h2>Flagged readings</h2>
+      {% if res.rows %}<div class="table-wrap"><table class="t"><tr><th>When</th><th class="num">Value</th><th>Fixed rules say</th><th>Learned normal says</th></tr>
+      {% for r in res.rows %}<tr><td><small>{{ r.t[5:16]|replace('T',' ') }}</small></td><td class="num"><b>{{ r.v }}</b></td>
+        <td>{% for x in r.rules %}<span class="pill warn">{{ x }}</span> {% else %}<small class="muted">fine</small>{% endfor %}</td>
+        <td>{% if r.learned %}<span class="pill bad">unusual ({{ r.z }} sd)</span>{% else %}<small class="muted">normal</small>{% endif %}</td></tr>{% endfor %}</table></div>
+      {% elif res.n %}<p class="muted" style="margin:0">Nothing flagged. Try another sensor, a longer time, or pull the probe out of the soil for a minute (with your teacher) and check again.</p>
+      {% endif %}
+    </div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>Two ways to catch a bad reading</h2>
+      <p><b>1 Fixed rules</b>, written by an engineer in advance: outside the sensor's range{% if res.limits and res.limits[0] is not none %} ({{ res.limits[0] }}–{{ res.limits[1] }}){% endif %}, moisture near 0 % (probe out of the soil), the same value six times in a row (frozen), or a sudden drop.</p>
+      <p><b>2 Learned normal</b>: the AI Lab "trains" on the first {{ res.train_n or '…' }} readings, works out their average and spread, and flags anything more than 3 standard deviations away.</p>
+      {% if res.band %}<div class="kv"><div>Average<b>{{ res.mean }}</b></div><div>Spread (sd)<b>{{ res.sd }}</b></div><div>Normal band<b>{{ res.band[0] }}–{{ res.band[1] }}</b></div></div>
+      <div class="kv"><div>Rules flagged<b>{{ res.rule_count }}</b></div><div>Learned flagged<b>{{ res.learned_count }}</b></div><div>Both agree<b>{{ res.both }}</b></div></div>{% endif %}
+    </div>
+    <div class="card"><h2>Think about it</h2>
+      <ol style="padding-left:18px;margin:0">
+        <li>Which method caught the probe being pulled out? Which one missed it?</li>
+        <li>After a watering, moisture jumps up. Is that a bad reading? What does the learned band think?</li>
+        <li>If the training readings already contain a fault, what happens to the "normal" band?</li>
+        <li>Which flags would you send to the farmer's phone, and which would you ignore?</li></ol></div>
+    {% if alerts %}<div class="card"><h2>Alarms from the kit</h2>
+      {% for a in alerts %}<div class="row between" style="padding:6px 0"><span class="pill {{ 'bad' if a.kind in ('no_flow','blocked') else 'warn' }}">{{ a.kind|replace('_',' ') }}</span><small class="muted">{{ a.created_at|ago }}</small></div><small>{{ a.message }}</small>{% endfor %}
+      <p class="hint">NO FLOW and BLOCKED come from the Trainer's pressure sensor: a rule built into the firmware.</p></div>{% endif %}
+  </div>
+</div>
+{% endblock %}

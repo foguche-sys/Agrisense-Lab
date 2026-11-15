@@ -1,0 +1,53 @@
+{% extends "base.html" %}{% block title %}Teacher training{% endblock %}
+{% from "partials/macros.html" import csrf with context %}
+{% block body %}
+<div class="page-head"><div><div class="eyebrow">Professional learning</div><h1>Teacher training</h1>
+  <p class="muted" style="margin:0">Three levels. Start small: Level 1 takes about 3 hours, on your own time.</p></div>
+  {% if staff %}<a class="btn" href="{{ url_for('training.admin') }}">Staff: workshops and reviews</a>{% endif %}</div>
+<div class="grid g3">
+  {% for n, L in levels.items() %}{% set aw = awards.get(n) %}
+  <div class="card"><div class="row between"><span class="eyebrow">Level {{ n }}</span>
+      {% if aw %}<span class="pill ok">Done · {{ aw.hours|round|int }} h</span>{% else %}<span class="pill">{{ L.hours }} h</span>{% endif %}</div>
+    <h3>{{ L.title }}</h3><p class="muted" style="margin:0 0 6px">{{ L.format }}</p><p style="margin:0">{{ L.outcome }}</p>
+    {% if aw %}<a class="btn small primary" style="margin-top:12px" href="{{ url_for('training.certificate', code=aw.code) }}">Certificate</a>{% endif %}</div>
+  {% endfor %}
+</div>
+
+<h2 id="level1" style="margin-top:28px">Level 1 · Get started <small class="muted">{{ prog.done }} of {{ prog.total }} steps ({{ prog.pct }} %)</small></h2>
+<div class="meter" style="margin-bottom:16px" aria-hidden="true"><span style="width:{{ prog.pct }}%"></span></div>
+<div class="grid g2">
+  {% for m in prog.modules %}
+  <div class="card"><div class="row between"><h3 style="margin:0">{{ loop.index }} · {{ m.title }}</h3>
+      {% if m.complete %}<span class="pill ok">Done</span>{% else %}<small class="muted">{{ m.minutes }} min</small>{% endif %}</div>
+    <div class="stack" style="gap:6px;margin-top:10px">
+    {% for s in m.steps %}
+      <form method="post" class="row between" style="gap:8px">{{ csrf() }}<input type="hidden" name="do" value="step"><input type="hidden" name="item" value="{{ s.key }}">
+        <input type="hidden" name="on" value="{{ '0' if s.done else '1' }}"><input type="hidden" name="anchor" value="level1">
+        <span style="flex:1;{{ 'color:var(--muted);text-decoration:line-through' if s.done }}">{{ s.text }}</span>
+        <button class="btn small {{ '' if s.done else 'primary' }}">{{ 'Undo' if s.done else 'Done' }}</button></form>
+    {% endfor %}</div></div>
+  {% endfor %}
+</div>
+
+<div class="grid g2" style="margin-top:28px">
+  <div class="card" id="level2"><h2>Level 2 · Hands-on workshop</h2>
+    {% if awards.get(2) %}<p><span class="pill ok">Attended</span> {{ awards[2].note }}</p>
+    {% else %}<p>A one-day workshop (about 6 hours), in person or live online: wire sensors, set up field nodes and the gateway, and run the irrigation and AI lessons with other teachers.</p>
+    <p class="muted" style="margin:0">To join one, email <a href="mailto:{{ config.SUPPORT_EMAIL }}?subject=AgriSense%20Lab%20workshop">{{ config.SUPPORT_EMAIL }}</a>. AgriSense Hub records your attendance here after the workshop.</p>{% endif %}</div>
+  <div class="card" id="level3"><h2>Level 3 · Certified AgriSense teacher</h2>
+    {% if awards.get(3) %}<p><span class="pill ok">Certified</span></p>
+    {% elif project and project.status == 'submitted' %}<p><span class="pill info">Project sent</span> “{{ project.title }}” is waiting for review.</p>
+    {% else %}
+      {% if project and project.status == 'returned' %}<div class="banner warn"><b>Returned for changes.</b> {{ project.feedback }}</div>{% endif %}
+      <p>Run an AgriSense project with your class (for example a full irrigation unit, or lessons 2.1–2.5), then write up what students did and learned and what you would change.</p>
+      {% if awards.get(2) %}
+      <form method="post">{{ csrf() }}<input type="hidden" name="do" value="project"><input type="hidden" name="anchor" value="level3">
+        <div class="field"><label for="pt">Project title</label><input id="pt" name="title" maxlength="120" required></div>
+        <div class="field" style="margin-top:10px"><label for="ps">Write-up (at least 200 characters)</label><textarea id="ps" name="summary" rows="7" minlength="200" maxlength="4000" required></textarea></div>
+        <div class="field" style="margin-top:10px"><label for="pl">Link to photos or student work (optional)</label><input id="pl" name="link" type="url" maxlength="300"></div>
+        <button class="btn primary" style="margin-top:12px">Send for review</button></form>
+      {% else %}<p class="muted" style="margin:0">Opens after the Level 2 workshop.</p>{% endif %}
+    {% endif %}</div>
+</div>
+<p class="hint" style="margin-top:20px">Certificates show hours of professional learning from AgriSense Hub. Whether they count toward your license or re-certification is decided by your district or state: ask your PD coordinator before you start.</p>
+{% endblock %}

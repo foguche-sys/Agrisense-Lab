@@ -84,8 +84,8 @@ def create_app(test_config=None):
     def _jload(s):
         return jload(s, [])
 
-    from .routes import admin, api, data, public, staff, student, studio, teacher
-    for bp in (public.bp, admin.bp, teacher.bp, student.bp, studio.bp, data.bp, staff.bp, api.bp):
+    from .routes import admin, ai, api, data, public, staff, student, studio, teacher, training
+    for bp in (public.bp, admin.bp, teacher.bp, student.bp, studio.bp, ai.bp, training.bp, data.bp, staff.bp, api.bp):
         app.register_blueprint(bp)
 
     @app.errorhandler(500)

@@ -1,0 +1,40 @@
+{% extends "base.html" %}{% block title %}Zones · AI Lab{% endblock %}
+{% from "ai/_ai.html" import ai_head with context %}
+{% block body %}
+{{ ai_head(cls, team, trays, tray, is_student, 'zones', 'Which beds behave alike?', '2.4', q) }}
+<form method="get" class="filters">{% for k, v in q.items() %}<input type="hidden" name="{{ k }}" value="{{ v }}">{% endfor %}
+  <label for="kk">Zones</label><select id="kk" name="k"><option value="2" {{ 'selected' if k == 2 }}>2</option><option value="3" {{ 'selected' if k == 3 }}>3</option></select>
+  <label for="hz">Using the last</label><select id="hz" name="hours">{% for h, lab in [(24,'day'),(168,'week'),(720,'month')] %}<option value="{{ h }}" {{ 'selected' if h == hours }}>{{ lab }}</option>{% endfor %}</select>
+  <button class="btn small">Group them</button></form>
+<div class="grid side">
+  <div class="stack">
+    {% if z.ok %}
+    <div class="grid {{ 'g3' if z.k == 3 else 'g2' }}">
+      {% for zone in z.zones %}<div class="card"><div class="eyebrow">Zone {{ zone.zone }}{{ ' · driest' if loop.first }}{{ ' · wettest' if loop.last and not loop.first }}</div>
+        <h3>Trays {{ zone.trays|join(', ') }}</h3>
+        <div class="kv">{% for m, lab in features %}<div>{{ lab }}<b>{{ zone[m] }}</b></div>{% endfor %}</div></div>{% endfor %}
+    </div>
+    {% else %}<div class="card"><p class="muted" style="margin:0">{{ z.why }}</p></div>{% endif %}
+    <div class="card"><h2>The data the model used</h2>
+      <div class="table-wrap"><table class="t"><tr><th>Tray</th>{% for m, lab in features %}<th class="num">{{ lab }}</th>{% endfor %}<th>Zone</th></tr>
+      {% for r in z.rows %}<tr><td><b>{{ r.tray.letter }}</b> <small class="muted">{{ r.tray.label }}</small></td>
+        {% for m, lab in features %}<td class="num">{{ r[m] if r[m] is not none else '—' }}</td>{% endfor %}
+        <td>{% if r.zone is defined %}<span class="pill info">Zone {{ r.zone }}</span>{% else %}<small class="muted">no data</small>{% endif %}</td></tr>{% endfor %}</table></div>
+      <p class="hint">Averages over the time you picked; drying rate from the most recent drying curve. Field nodes A–D show up here as trays A–D.</p></div>
+  </div>
+  <div class="stack">
+    <div class="card"><h2>How k-means works</h2>
+      <ol style="padding-left:18px;margin:0">
+        <li>Put every feature on the same scale, so EC (hundreds) doesn't drown out moisture (tens).</li>
+        <li>Pick {{ k }} starting points that are far apart.</li>
+        <li>Give each tray to its nearest point. Move each point to the middle of its trays.</li>
+        <li>Repeat until nothing moves. Each group is a zone.</li></ol></div>
+    <div class="card"><h2>Think about it</h2>
+      <ol style="padding-left:18px;margin:0">
+        <li>Write one watering plan per zone instead of one per tray. What changes?</li>
+        <li>Switch from 2 to 3 zones. Which tray moves, and why?</li>
+        <li>Which feature seems to decide the zones most?</li>
+        <li>A real farm does this with hundreds of sensors or soil maps. What would it save?</li></ol></div>
+  </div>
+</div>
+{% endblock %}
