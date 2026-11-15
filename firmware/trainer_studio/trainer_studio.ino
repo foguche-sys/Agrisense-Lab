@@ -8,6 +8,8 @@
     Tank level   MCP23017 pin 13, INPUT_PULLUP (float closed = OK)
     Relay 1 pump MCP23017 pin 11      Relay 2 fan  MCP23017 pin 12      Buzzer MCP pin 10
     Servo vent   PCA9685 ch0          AIR pod AHT20 0x38 (Qwiic)
+    Grow light   PCA9685 ch2 -> logic-level MOSFET module gate -> 12 V LED strip on load jacks L4 (white)
+                 (PCA runs at 50 Hz for the servo, so dimming below ~30 % can flicker to the eye; plants don't mind)
 
   Safety is enforced HERE as well as on the server:
     pump max 30 s, 60 s rest, only with tank OK,
@@ -24,7 +26,8 @@
 #include <Adafruit_AHTX0.h>
 #include "secrets.h"
 
-#define FW_VERSION "trainer-1.0.0"
+#define FW_VERSION "trainer-1.1.0"
+#define PCA_GROW 2
 #define RS485_TX 4
 #define RS485_RX 40
 #define RS485_DE 41
@@ -40,12 +43,14 @@ Adafruit_ADS1115 ads;
 Adafruit_MCP23X17 mcp;
 Adafruit_PWMServoDriver pca;
 Adafruit_AHTX0 aht;
-bool haveAht = false;
+bool haveAht = false, haveLux = false;
+const uint8_t BH1750_ADDR = 0x23;            // LIGHT pod (Qwiic)
 
 bool pumpOn = false, fanOn = false;
 uint32_t pumpStart = 0, pumpStopAt = 0, pumpOffAt = 0, fanStopAt = 0, buzzerStopAt = 0;
 String pendingEvent = "";
 int ventDeg = 90;
+int growPct = 0;
 
 // ---------- RS485 soil probe (Modbus RTU function 03) ----------
 uint16_t crc16(const uint8_t *b, size_t n) {
@@ -92,9 +97,27 @@ void setVent(int deg) {
   pca.setPWM(0, 0, map(ventDeg, 0, 180, 110, 510)); // 0.5-2.5 ms at 50 Hz
 }
 
+// ---------- LIGHT pod: BH1750, read directly (no library) ----------
+bool luxBegin() {
+  Wire.beginTransmission(BH1750_ADDR); Wire.write(0x10);   // continuous high-resolution mode
+  return Wire.endTransmission() == 0;
+}
+bool readLux(float &lux) {
+  if (Wire.requestFrom(BH1750_ADDR, (uint8_t)2) != 2) return false;
+  uint16_t raw = (Wire.read() << 8) | Wire.read();
+  lux = raw / 1.2f; return true;
+}
+
+void setGrow(int pct) {                            // 0-100 % -> PCA9685 duty on ch 2 (MOSFET gate)
+  growPct = constrain(pct, 0, 100);
+  if (growPct == 0) pca.setPWM(PCA_GROW, 0, 4096);        // fully off
+  else if (growPct == 100) pca.setPWM(PCA_GROW, 4096, 0); // fully on
+  else pca.setPWM(PCA_GROW, 0, map(growPct, 0, 100, 0, 4095));
+}
+
 void applyCommand(const String &cmd) {            // "SET,pump,ON,30" | "SET,vent,120" | "STOP" | "RESTART"
   Serial.println("cmd " + cmd);
-  if (cmd == "STOP") { pumpOff("STOP"); fanOn = false; mcp.digitalWrite(MCP_FAN, LOW); return; }
+  if (cmd == "STOP") { pumpOff("STOP"); fanOn = false; mcp.digitalWrite(MCP_FAN, LOW); setGrow(0); return; }
   if (cmd == "RESTART") { ESP.restart(); }
   if (!cmd.startsWith("SET,")) return;
   int a = cmd.indexOf(',', 4), b = cmd.indexOf(',', a + 1);
@@ -104,6 +127,7 @@ void applyCommand(const String &cmd) {            // "SET,pump,ON,30" | "SET,ven
   else if (comp == "fan") { fanOn = val == "ON"; mcp.digitalWrite(MCP_FAN, fanOn); fanStopAt = (fanOn && secs) ? millis() + secs * 1000UL : 0; }
   else if (comp == "buzzer") { bool on = val == "ON"; mcp.digitalWrite(MCP_BUZZER, on); buzzerStopAt = on ? millis() + (secs ? secs : 2) * 1000UL : 0; }
   else if (comp == "vent") setVent(val.toInt());
+  else if (comp == "growlight") setGrow(val == "ON" ? 100 : val == "OFF" ? 0 : val.toInt());
   else if (comp == "ledbar") { int n = constrain(val.toInt(), 0, 10); for (int i = 0; i < 10; i++) mcp.digitalWrite(i, i < n); }
 }
 
@@ -129,11 +153,13 @@ void postFeeds() {
   float m, t, ec, ph;
   if (readProbe(m, t, ec, ph)) f["moisture"] = m;
   if (haveAht) { sensors_event_t h, tp; aht.getEvent(&h, &tp); f["air-temp"] = tp.temperature; f["humidity"] = h.relative_humidity; }
+  float lux; if (haveLux && readLux(lux)) f["light"] = round(lux);
   f["pressure"] = round(pressureKpa() * 10) / 10.0;
   f["tank"] = tankOk() ? "OK" : "LOW";
   f["pump"] = pumpOn ? "ON" : "OFF";
   f["fan"] = fanOn ? "ON" : "OFF";
   f["vent"] = ventDeg;
+  f["growlight"] = growPct;
   if (pendingEvent.length()) doc["event"] = pendingEvent;
   String body; serializeJson(doc, body);
 
@@ -172,7 +198,8 @@ void setup() {
   for (int i = 0; i <= 12; i++) { mcp.pinMode(i, OUTPUT); mcp.digitalWrite(i, LOW); }
   mcp.pinMode(14, OUTPUT); mcp.pinMode(15, OUTPUT);
   mcp.pinMode(MCP_LEVEL, INPUT_PULLUP);
-  pca.begin(); pca.setPWMFreq(50); setVent(ventDeg);
+  pca.begin(); pca.setPWMFreq(50); setVent(ventDeg); setGrow(0);
+  haveLux = luxBegin();
   haveAht = aht.begin();
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 }

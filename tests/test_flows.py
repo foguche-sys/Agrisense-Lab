@@ -397,3 +397,14 @@ def test_migration_adds_new_columns(tmp_path):
     Database(f"sqlite:///{path}").init_schema()
     cols = [r[1] for r in sqlite3.connect(path).execute("PRAGMA table_info(trays)")]
     assert "crop" in cols
+
+
+def test_grow_light_dims_and_clamps(client, app, db):
+    i = ids(db)
+    tok = login(client, "teacher")
+    s = lambda v: client.post(f"/api/studio/{i['t1']}/set", json={"feed": "agri03-team-1.growlight", "value": v}, headers={"X-CSRF": tok}).json
+    assert s("150")["value"] == "100"          # clamped to 0-100 %
+    assert s("40")["value"] == "40"
+    assert s("ON")["value"] == "100" and s("OFF")["value"] == "0"
+    cmds = client.get("/api/v1/commands", headers={"X-Device-Key": device_key(app, "TR-DEM1")}).json["commands"]
+    assert cmds == ["SET,growlight,100", "SET,growlight,40", "SET,growlight,100", "SET,growlight,0"]

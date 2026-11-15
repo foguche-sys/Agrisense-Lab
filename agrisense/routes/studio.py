@@ -13,7 +13,7 @@ bp = Blueprint("studio", __name__, url_prefix="/studio")
 
 BLOCKS = {
     "toggle": "Toggle (ON/OFF output)",
-    "slider": "Slider (servo, LED bar, motor)",
+    "slider": "Slider (servo, LED bar, motor, grow light)",
     "gauge": "Gauge (one sensor)",
     "chart": "Line chart",
     "value": "Big number",
@@ -26,6 +26,8 @@ RULE_TEMPLATES = {
     "water": ("Water at the refill point", "moisture", "lt", None, "on", "pump", 20, 300,
               "Pump ON for 20 s when soil moisture drops below your tray's refill point. Needs your teacher's OK."),
     "cool": ("Cool the greenhouse", "air-temp", "gt", "30", "on", "fan", 30, 120, "Fan ON when the air is above 30 °C."),
+    "lights": ("Grow lights when it's dark", "light", "lt", "2000", "on", "growlight", 60, 600,
+               "Grow light ON (100 %) when the LIGHT pod reads under 2000 lux, inside the rule's school-day hours."),
     "tank": ("Tank empty alarm", "tank", "eq", "LOW", "alert", None, 0, 600, "Send an alert when the tank level is LOW."),
     "blocked": ("Blocked line alarm", "pressure", "gt", "150", "beep", None, 0, 300, "Beep when pressure is over 150 kPa (kinked tube or clogged emitter)."),
 }

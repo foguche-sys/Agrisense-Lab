@@ -46,7 +46,7 @@
         <div data-show-when="type=chart"><label>Hours shown</label><input name="hours" type="number" step="any" value="1"></div>
         <div data-show-when="type=indicator"><label>Green when value is</label><input name="on" value="OK"></div>
       </div>
-      <p class="hint">Toggles and sliders only work on outputs (pump, fan, buzzer, vent, LED bar, motor). Add more components on the Devices tab.</p>
+      <p class="hint">Toggles and sliders only work on outputs (pump, fan, buzzer, vent, LED bar, motor, grow light). Add more components on the Devices tab.</p>
       <button class="btn primary">Add widget</button></form></div>
   <div class="card"><h2>Dashboard</h2>
     <form method="post" class="row">{{ csrf() }}<input type="hidden" name="do" value="rename"><input name="name" value="{{ dash.name }}" style="max-width:280px" aria-label="Dashboard name"><button class="btn">Rename</button></form>

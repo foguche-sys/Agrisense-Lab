@@ -27,6 +27,7 @@ TRAINER_COMPONENTS = {
     "knob-1":   ("Knob 1", "sensor", "%", "ADS1115 A0"),
     "knob-2":   ("Knob 2", "sensor", "%", "ADS1115 A1"),
     "motor":    ("Motor (TB6612)", "output", "-100..100", "PCA ch 1 + MCP 14/15 · L3"),
+    "growlight": ("Grow light", "output", "%", "PCA9685 ch 2 · MOSFET · load jacks L4"),
     "post-a1":  ("Coding post A1", "sensor", "V", "GPIO 7 · post 12"),
     "post-d1":  ("Coding post D1", "sensor", "HIGH/LOW", "GPIO 47 · post 14"),
 }

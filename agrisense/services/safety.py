@@ -159,6 +159,9 @@ def set_output(db, team, comp, value, actor_id=None, memberships=None, by_action
         value = str(max(0, min(10, int(float(value)))))
     if comp == "motor":
         value = str(max(-100, min(100, int(float(value)))))
+    if comp == "growlight":                       # 0-100 % brightness; rules send ON/OFF
+        v = {"ON": 100, "OFF": 0}.get(value.upper()) if value.upper() in ("ON", "OFF") else int(float(value))
+        value = str(max(0, min(100, v)))
     dev = db.one("SELECT * FROM devices WHERE team_id = ? AND kind = 'trainer' AND status != 'retired'", team["id"])
     if dev:
         run_s = max(1, min(int(seconds or TRAINER_PUMP_MAX), TRAINER_PUMP_MAX))
