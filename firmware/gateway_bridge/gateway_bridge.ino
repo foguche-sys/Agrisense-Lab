@@ -10,15 +10,28 @@
                       "P,TANK_LOW" | "P,TANK_OK"  (only if a pump node has a float switch; the kit's does not)
     gateway -> pump:  the platform command as-is: "RUN,60,B" or "STOP"
   The pump node keeps its own limits (300 s max, one tray at a time, stops on NO FLOW / BLOCKED).
+
+  Board (Tools > Board): "XIAO_ESP32S3" for 2026 kits (standard Radio Board: 0.96" OLED on D4/D5 = GPIO5/6) or
+  "Heltec WiFi LoRa 32(V3)" for first kits (built-in OLED). Radio pins and settings: agrisense_radio.h.
+  Libraries: RadioLib, ArduinoJson 7, Adafruit SSD1306 + Adafruit GFX.
 */
 #include <WiFi.h>
 #include <HTTPClient.h>
 #include <ArduinoJson.h>
-#include <RadioLib.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include "agrisense_radio.h"
 #include "secrets.h"
 
-#define FW_VERSION "gateway-1.0.0"
-SX1262 radio = new Module(8, 14, 12, 13);           // Heltec V3: NSS, DIO1, RST, BUSY
+#define FW_VERSION "gateway-1.1.0"
+#if defined(ARDUINO_XIAO_ESP32S3)
+Adafruit_SSD1306 screen(128, 64, &Wire, -1);
+#else
+Adafruit_SSD1306 screen(128, 64, &Wire, 21);
+#endif
+bool screenOk = false, radioOk = false;
+uint32_t forwarded = 0; String lastNode = "-"; int lastRssi = 0; String lastHttp = "-";
 volatile bool rxFlag = false;
 void IRAM_ATTR onRx() { rxFlag = true; }
 
@@ -39,6 +52,7 @@ void parseNode(const String &p, int rssi) {
   float v[8]; int idx = 0, start = 2, comma = p.indexOf(',', start);
   r["node"] = comma > 0 ? p.substring(start, comma) : p.substring(start);
   r["rssi"] = rssi;
+  lastNode = r["node"].as<String>(); lastRssi = rssi;
   if (p.startsWith("F,")) { r["fault"] = true; return; }
   while (comma > 0 && idx < 8) {
     int next = p.indexOf(',', comma + 1);
@@ -58,6 +72,7 @@ String post(const char *key, const String &body) {
   int code = http.POST(body);
   String out = code == 200 ? http.getString() : "";
   if (code != 200) Serial.printf("ingest HTTP %d\n", code);
+  lastHttp = String(code);
   http.end();
   return out;
 }
@@ -72,9 +87,30 @@ void relay(const String &res) {
   }
 }
 
+void draw() {
+  if (!screenOk) return;
+  screen.clearDisplay(); screen.setTextColor(SSD1306_WHITE); screen.setTextSize(1); screen.setCursor(0, 0);
+  screen.println("AgriSense GATEWAY");
+  screen.println(WiFi.status() == WL_CONNECTED ? "Wi-Fi OK " + WiFi.localIP().toString() : String("Wi-Fi: connecting"));
+  screen.println(radioOk ? "LoRa 909.4 MHz ready" : "LoRa: RADIO NOT FOUND");
+  screen.printf("Readings sent %lu\n", (unsigned long)forwarded);
+  screen.printf("Last %s %ddBm\n", lastNode.c_str(), lastRssi);
+  screen.printf("Website HTTP %s\n", lastHttp.c_str());
+  screen.display();
+}
+
 void setup() {
   Serial.begin(115200);
-  radio.begin(915.0, 125.0, 9, 7, 0x12, 14);       // US915; match your node settings
+#if defined(ARDUINO_XIAO_ESP32S3)
+  Wire.begin(5, 6);
+#else
+  pinMode(36, OUTPUT); digitalWrite(36, LOW); delay(50);      // Heltec: power the built-in screen
+  Wire.begin(17, 18);
+#endif
+  screenOk = screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+  int st = radioBegin();                           // agrisense_radio.h: same settings as every node
+  radioOk = st == RADIOLIB_ERR_NONE;
+  if (!radioOk) Serial.printf("radio.begin failed: %d\n", st);
   radio.setDio1Action(onRx);
   radio.startReceive();
   WiFi.begin(WIFI_SSID, WIFI_PASS);
@@ -82,6 +118,8 @@ void setup() {
 }
 
 void loop() {
+  static uint32_t lastDraw = 0;
+  if (millis() - lastDraw > 1000) { lastDraw = millis(); draw(); }
   if (rxFlag) {
     rxFlag = false;
     String p; if (radio.readData(p) == RADIOLIB_ERR_NONE) parseNode(p, (int)radio.getRSSI());
@@ -92,6 +130,7 @@ void loop() {
   if (readings.size() && (now - lastSend > 10000 || readings.size() >= 10)) {
     batch["firmware"] = FW_VERSION; batch["rssi"] = WiFi.RSSI();
     String body; serializeJson(batch, body);
+    forwarded += readings.size();
     post(DEVICE_KEY, body); resetBatch(); lastSend = now;
   }
   if (now - lastPumpPoll > 1500 || pumpEvent.length()) {      // pump node: report events, collect RUN/STOP

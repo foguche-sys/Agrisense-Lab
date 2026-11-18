@@ -24,5 +24,5 @@ Its own pump limits (30 s, NO FLOW, BLOCKED, tank) always stay on.
 
 ## Wiring
 Qwiic cable (200 mm, JST-SH 4-pin) from the UNO R4's Qwiic connector to the Trainer's STUDENT socket.
-Inside the Trainer: SDA → Heltec GPIO 38, SCL → GPIO 39, GND → GND; the socket's 3.3 V pad is not connected.
+Inside the Trainer: SDA → XIAO D0 (GPIO 1), SCL → D1 (GPIO 2), GND → GND on 2026 kits (Heltec kits: GPIO 38 / 39); the socket's 3.3 V pad is not connected.
 I2C address 0x42, 100 kHz. Protocol: `src/agrisense_protocol.h`.

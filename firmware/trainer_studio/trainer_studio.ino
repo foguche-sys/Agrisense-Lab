@@ -1,9 +1,16 @@
 /*
   AgriSense Lab - Trainer Board <-> IoT Studio
-  Heltec WiFi LoRa 32 V3. Posts the team's feeds every 5 s and switches outputs from the platform.
+  Posts the team's feeds every 5 s and switches outputs from the platform. Wi-Fi only (no LoRa).
+  Board (Tools > Board): "XIAO_ESP32S3" for 2026 kits (standard Radio Board) or "Heltec WiFi LoRa 32(V3)".
 
-  Pins (Trainer Board v2, FIELD I/O; unchanged from the wiring atlas):
-    RS485 probe  MAX3485  TX GPIO4  RX GPIO40  DE/RE GPIO41   4800 baud, address 1, regs 0..6
+  Pins (Trainer Board v2, FIELD I/O):         XIAO_ESP32S3 (2026)              Heltec V3 (first kits)
+    RS485 probe  MAX3485  TX                  D3 / GPIO4                       GPIO4
+                          RX (1k/2k divider)  D7 / GPIO44                      GPIO40
+                          DE/RE               D2 / GPIO3                       GPIO41
+    Module bus (Wire)     SDA / SCL           D4 / D5 (GPIO5 / GPIO6)          GPIO5 / GPIO6
+    STUDENT port (Wire1)  SDA / SCL           D0 / D1 (GPIO1 / GPIO2)          GPIO38 / GPIO39
+    Screen                0.96" OLED 0x3C on the module bus                    (built-in screen not used)
+    4800 baud, address 1, regs 0..6
     Pressure     ADS1115 A2 through 10k/20k divider (0.5-4.5 V sensor, 0-30 psi)
     Tank level   MCP23017 pin 13, INPUT_PULLUP (float closed = OK)
     Relay 1 pump MCP23017 pin 11      Relay 2 fan  MCP23017 pin 12      Buzzer MCP pin 10
@@ -14,8 +21,8 @@
                  (PCA runs at 50 Hz for the servo, so dimming below ~30 % can flicker to the eye; plants don't mind)
 
   I2C buses (wiring sheet W5):
-    Wire  = module bus  SDA GPIO 5,  SCL GPIO 6  (MCP23017, PCA9685, ADS1115, Qwiic port, pods, coding posts 10/11)
-    Wire1 = STUDENT port SDA GPIO 38, SCL GPIO 39 (I2C target at 0x42 for the student's UNO R4; 3.3 V pad not connected)
+    Wire  = module bus (MCP23017, PCA9685, ADS1115, Qwiic port, pods, coding posts 10/11, XIAO screen 0x3C)
+    Wire1 = STUDENT port (I2C target at 0x42 for the student's UNO R4; 3.3 V pad not connected)
 
   Safety is enforced HERE as well as on the server:
     pump max 30 s, 60 s rest, only with tank OK,
@@ -23,7 +30,8 @@
   STUDENT port (v1.2): student code can only ASK for a run (max 20 s). The Trainer decides with
   as_decide_pump() in agrisense_protocol.h: needs the teacher's unlock (sent by the website), Wi-Fi,
   rest time, tank, a probe reading and soil below 40 %. Answers OK or a REFUSED code.
-  Libraries: Adafruit ADS1X15, Adafruit MCP23017, Adafruit PWM Servo Driver, Adafruit AHTX0, ArduinoJson 7.
+  Libraries: Adafruit ADS1X15, Adafruit MCP23017, Adafruit PWM Servo Driver, Adafruit AHTX0, ArduinoJson 7,
+             Adafruit SSD1306 + Adafruit GFX.
 */
 #include <WiFi.h>
 #include <HTTPClient.h>
@@ -33,29 +41,40 @@
 #include <Adafruit_MCP23X17.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <Adafruit_AHTX0.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
 #include "secrets.h"
 #include "agrisense_protocol.h"
 
-#define FW_VERSION "trainer-1.3.0"
+#define FW_VERSION "trainer-1.4.0"
 #define PCA_GROW 2
 #define PCA_MOTOR 1
 #define MCP_AIN1 14
 #define MCP_AIN2 15
 #define RS485_TX 4
+#if defined(ARDUINO_XIAO_ESP32S3)
+#define RS485_RX 44
+#define RS485_DE 3
+#define STUDENT_SDA 1
+#define STUDENT_SCL 2
+#else
 #define RS485_RX 40
 #define RS485_DE 41
+#define STUDENT_SDA 38
+#define STUDENT_SCL 39
+#endif
 #define MCP_BUZZER 10
 #define MCP_PUMP 11
 #define MCP_FAN 12
 #define MCP_LEVEL 13
 #define I2C_SDA 5
 #define I2C_SCL 6
-#define STUDENT_SDA 38
-#define STUDENT_SCL 39
 
 const uint32_t PUMP_MAX_MS = 30000, PUMP_REST_MS = 60000, FLOW_CHECK_MS = 2000;
 const float NO_FLOW_KPA = 10.0, BLOCKED_KPA = 150.0;
 
+Adafruit_SSD1306 screen(128, 64, &Wire, -1);   // optional status screen on the module bus (XIAO Radio Board)
+bool screenOk = false;
 Adafruit_ADS1115 ads;
 Adafruit_MCP23X17 mcp;
 Adafruit_PWMServoDriver pca;
@@ -325,7 +344,19 @@ void setup() {
   haveLux = luxBegin();
   haveAht = aht.begin();
   studentBegin();
+#if defined(ARDUINO_XIAO_ESP32S3)
+  screenOk = screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
+#endif
   WiFi.begin(WIFI_SSID, WIFI_PASS);
+}
+
+void drawStatus() {
+  if (!screenOk) return;
+  screen.clearDisplay(); screen.setTextColor(SSD1306_WHITE); screen.setTextSize(1); screen.setCursor(0, 0);
+  screen.println("AgriSense TRAINER");
+  screen.println(WiFi.status() == WL_CONNECTED ? "Wi-Fi OK " + WiFi.localIP().toString() : String("Wi-Fi: connecting"));
+  screen.println(FW_VERSION);
+  screen.display();
 }
 
 uint32_t lastPost = 0, lastPoll = 0, lastSnap = 0;
@@ -334,6 +365,8 @@ void loop() {
   uint32_t now = millis();
   if (now - lastSensorRead > 2000) readSensors();
   if (now - lastSnap > 250) { lastSnap = now; studentSnapshot(); }
+  static uint32_t lastDraw = 0;
+  if (now - lastDraw > 2000) { lastDraw = now; drawStatus(); }
   studentLoop();                                    // answers the STUDENT port even offline (with REFUSED: offline)
   if (WiFi.status() != WL_CONNECTED) { pumpOff("no Wi-Fi"); delay(20); return; }
   if (now - lastPost > 5000 || pendingEvent.length() || studentEvent.length()) { lastPost = now; postFeeds(); }

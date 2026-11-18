@@ -15,32 +15,49 @@
     - relays are OFF at power-up and if the program hangs (watchdog restarts the board within 5 s)
     - lid button: press = STOP; hold 3 s when idle = 5 s test run (to prime the line; not reported as a run)
 
-  Pins (pump node wiring, inside the jack-panel case):
-    Relay 1 PUMP   GPIO5  -> 1-channel 5 V relay, high-level trigger (HIGH = on), 10k pull-down to GND
-    Relay 2 VALVE  GPIO4  -> same type; valve opens 0.3 s before the pump and closes 0.3 s after
-    Pressure SIG   GPIO6  <- through the 10k/20k divider on the protection board (sensor 0.5-4.5 V)
-    12 V monitor   GPIO7  <- 47k/10k divider (optional; shows "12V --" if not fitted)
-    Lid button     GPIO0 to GND (the PRG pin)
-    Screen         built-in OLED: SDA GPIO17, SCL GPIO18, RST GPIO21; Vext GPIO36 LOW = screen power on
+  Pins (pump node wiring, inside the jack-panel case). Picked from Tools > Board:
+                   "XIAO_ESP32S3" (2026 kits, Radio Board)    "Heltec WiFi LoRa 32(V3)" (first kits)
+    Relay 1 PUMP   D3 / GPIO4                                 GPIO5
+    Relay 2 VALVE  D2 / GPIO3                                 GPIO4
+    Pressure SIG   D0 / GPIO1                                 GPIO6
+    12 V monitor   D1 / GPIO2                                 GPIO7
+    Lid button     D7 / GPIO44 to GND                         GPIO0 (PRG) to GND
+    Screen         0.96" OLED on D4/D5 (GPIO5/6)              built-in OLED (GPIO17/18, RST 21, Vext 36)
+    Relays: 1-channel 5 V, high-level trigger (HIGH = on), 10k pull-down IN to GND (keeps them off while the
+    board starts). Valve opens 0.3 s before the pump and closes 0.3 s after. Pressure through the 10k/20k
+    divider (sensor 0.5-4.5 V). 12 V monitor through 47k/10k (optional; shows "12V --" if not fitted).
+    XIAO: never use D6 (GPIO43) for a relay - it carries boot messages at power-up. D8-D10 belong to the radio.
   Libraries (Arduino Library Manager): RadioLib, Adafruit SSD1306 + Adafruit GFX.
-  Board: "Heltec WiFi LoRa 32(V3)" (Heltec ESP32 boards) or "ESP32S3 Dev Module" (esp32 by Espressif).
   No Wi-Fi and no keys: this node only talks LoRa, so there is no secrets.h.
 */
 #include <Wire.h>
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
-#include <RadioLib.h>
 #include <esp_task_wdt.h>
+#include "agrisense_radio.h"
 #include "pump_logic.h"
 
-#define FW_VERSION "pump-1.0.0"
+#define FW_VERSION "pump-1.1.0"
+#if defined(ARDUINO_XIAO_ESP32S3)
+#define PIN_PUMP 4
+#define PIN_VALVE 3
+#define PIN_PRESSURE 1
+#define PIN_12V 2
+#define PIN_BUTTON 44
+#define OLED_SDA 5
+#define OLED_SCL 6
+#define OLED_RST -1
+#else
 #define PIN_PUMP 5
 #define PIN_VALVE 4
 #define PIN_PRESSURE 6
 #define PIN_12V 7
 #define PIN_BUTTON 0
-#define VEXT 36
+#define OLED_SDA 17
+#define OLED_SCL 18
 #define OLED_RST 21
+#define VEXT 36
+#endif
 
 // Pressure sensor: the kit's pump-node transducer is 0-1.2 MPa (1200 kPa). If you fit the 0-30 psi
 // Trainer sensor instead, change this to 206.8.
@@ -48,7 +65,6 @@ const float SENSOR_FULL_KPA = 1200.0f;
 const float DIVIDER = 1.5f;                 // 10k/20k: sensor volts = pin volts x 1.5
 const float SENSOR_MIN_V = 0.25f;           // a working sensor never reads below ~0.5 V; lower = unplugged
 
-SX1262 radio = new Module(8, 14, 12, 13);   // Heltec V3: NSS, DIO1, RST, BUSY
 Adafruit_SSD1306 screen(128, 64, &Wire, OLED_RST);
 pump::Logic logic;
 
@@ -154,10 +170,12 @@ void setup() {
   analogReadResolution(12);
   analogSetPinAttenuation(PIN_PRESSURE, ADC_11db);
   analogSetPinAttenuation(PIN_12V, ADC_11db);
-  pinMode(VEXT, OUTPUT); digitalWrite(VEXT, LOW); delay(50);   // power the screen
-  Wire.begin(17, 18);
+#ifdef VEXT
+  pinMode(VEXT, OUTPUT); digitalWrite(VEXT, LOW); delay(50);   // Heltec: power the built-in screen
+#endif
+  Wire.begin(OLED_SDA, OLED_SCL);
   screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
-  int st = radio.begin(915.0, 125.0, 9, 7, 0x12, 14);         // US915; same settings as the gateway
+  int st = radioBegin();                                       // agrisense_radio.h: same settings as the gateway
   radioOk = st == RADIOLIB_ERR_NONE;
   if (radioOk) { radio.setDio1Action(onRx); radio.startReceive(); }
   else Serial.printf("radio.begin failed: %d\n", st);

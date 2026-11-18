@@ -9,11 +9,17 @@
     SEND_LORA (Field add-on): sends "R,<serial>,moisture,temp,EC,pH,N,P,K,supplyV" by LoRa to the
                field gateway, like nodes A-D.
 
-  Pins (same as field nodes A-D, wiring sheet W2):
-    RS485 MAX485  TX GPIO4  RX GPIO40 (through 1k/2k divider)  DE/RE GPIO41   4800 baud, address 1
-    Pod rail      SDA GPIO5  SCL GPIO6 (3.3 V): AIR pod AHT20 0x38, LIGHT pod BH1750 0x23
-    12 V monitor  GPIO7 through 47k/10k divider (optional)      Button GPIO0 (PRG)
-    Screen        built-in OLED: SDA GPIO17, SCL GPIO18, RST GPIO21; Vext GPIO36 LOW = screen power on
+  The same sketch runs field nodes A-D (set SEND_MODE to SEND_LORA). It picks the pins for the board you
+  choose in Tools > Board:
+    "XIAO_ESP32S3" (2026 kits: Seeed XIAO ESP32S3 + Wio-SX1262 on the standard Radio Board)
+       RS485 MAX485  TX D3/GPIO4  RX D7/GPIO44 (through 1k/2k divider)  DE/RE D2/GPIO3   4800 baud, address 1
+       Pod rail + screen  SDA D4/GPIO5  SCL D5/GPIO6 (3.3 V): AIR pod AHT20 0x38, LIGHT pod BH1750 0x23,
+                          0.96" OLED 0x3C
+       12 V monitor  D0/GPIO1 through 47k/10k divider (optional)  Button D1/GPIO2 to GND (or the XIAO's BOOT key)
+       LoRa radio    Wio-SX1262 on the B2B connector (uses D8-D10: leave them free)
+    "Heltec WiFi LoRa 32(V3)" / "ESP32S3 Dev Module" (first kits): wiring sheet W2
+       RS485 TX GPIO4  RX GPIO40  DE/RE GPIO41 | pods SDA GPIO5 SCL GPIO6 | 12 V GPIO7 | button GPIO0 (PRG)
+       built-in OLED SDA GPIO17, SCL GPIO18, RST GPIO21; Vext GPIO36 LOW = screen power on
   Libraries: Adafruit AHTX0, Adafruit SSD1306 + GFX, ArduinoJson 7, RadioLib (LoRa mode only).
 */
 #define SEND_WIFI 1
@@ -30,24 +36,32 @@
 #include <WiFi.h>
 #include <HTTPClient.h>
 #else
-#include <RadioLib.h>
-SX1262 radio = new Module(8, 14, 12, 13);              // Heltec V3: NSS, DIO1, RST, BUSY
+#include "agrisense_radio.h"
 #endif
 
-#define FW_VERSION "deck-1.0.0"
+#define FW_VERSION "deck-1.1.0"
 #define RS485_TX 4
-#define RS485_RX 40
-#define RS485_DE 41
 #define POD_SDA 5
 #define POD_SCL 6
+#if defined(ARDUINO_XIAO_ESP32S3)
+#define RS485_RX 44
+#define RS485_DE 3
+#define MON_12V 1
+#define BUTTON 2
+TwoWire &podBus = Wire;                               // pods and the screen share one bus (screen is 0x3C)
+Adafruit_SSD1306 screen(128, 64, &Wire, -1);
+#else
+#define RS485_RX 40
+#define RS485_DE 41
 #define MON_12V 7
+#define BUTTON 0
 #define VEXT 36
 #define OLED_RST 21
+TwoWire podBus = TwoWire(1);                          // pods on their own bus; the built-in screen uses Wire
+Adafruit_SSD1306 screen(128, 64, &Wire, OLED_RST);
+#endif
 const uint32_t SEND_EVERY_MS = 60000;                // one reading a minute to the website
 const uint8_t BH1750_ADDR = 0x23;
-
-TwoWire podBus = TwoWire(1);                          // pods on their own bus; the screen uses Wire
-Adafruit_SSD1306 screen(128, 64, &Wire, OLED_RST);
 Adafruit_AHTX0 aht;
 bool haveAht = false, haveLux = false, probeOk = false;
 float moist = 0, stemp = 0, ec = 0, ph = 0, n = 0, p = 0, k = 0, airT = 0, hum = 0, lux = 0, supplyV = 0;
@@ -130,26 +144,33 @@ void sendReading() {
 
 void setup() {
   Serial.begin(115200);
+  pinMode(RS485_DE, OUTPUT); digitalWrite(RS485_DE, LOW);
+  pinMode(BUTTON, INPUT_PULLUP);
+#if defined(ARDUINO_XIAO_ESP32S3)
+  pinMode(0, INPUT_PULLUP);                                        // the XIAO's own BOOT key also sends
+  Wire.begin(POD_SDA, POD_SCL, 100000);
+#else
   pinMode(VEXT, OUTPUT); digitalWrite(VEXT, LOW); delay(50);       // power the screen
   Wire.begin(17, 18);
-  screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   podBus.begin(POD_SDA, POD_SCL, 100000);
+#endif
+  screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
   haveAht = aht.begin(&podBus);
   haveLux = luxBegin();
-  pinMode(RS485_DE, OUTPUT); digitalWrite(RS485_DE, LOW);
   Serial1.begin(4800, SERIAL_8N1, RS485_RX, RS485_TX);
   analogReadResolution(12);
 #if SEND_MODE == SEND_WIFI
   WiFi.begin(WIFI_SSID, WIFI_PASS);
 #else
-  radio.begin(915.0, 125.0, 9, 7, 0x12, 14);         // US915; same settings as the gateway
+  int st = radioBegin();                               // settings in agrisense_radio.h, same as the gateway
+  if (st != RADIOLIB_ERR_NONE) { sendStatus = "radio err " + String(st); Serial.println(sendStatus); }
 #endif
 }
 
 uint32_t lastRead = 0, lastSend = 0;
 void loop() {
   uint32_t now = millis();
-  bool button = digitalRead(0) == LOW;                 // press PRG to send now (handy in lesson 1.6, step "Go live")
+  bool button = digitalRead(BUTTON) == LOW || digitalRead(0) == LOW;   // press to send now (lesson 1.6, "Go live")
   if (now - lastRead > 2000) { lastRead = now; readAll(); draw(); }
   if (now - lastSend > SEND_EVERY_MS || (button && now - lastSend > 3000) || (lastSend == 0 && now > 8000)) {
     lastSend = now; sendReading(); draw();

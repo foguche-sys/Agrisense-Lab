@@ -27,8 +27,14 @@ Lid button: **press** = STOP. **Hold 3 s** while idle = a 5 s test run, to prime
 3. **Tools > Board > Boards Manager**: search **esp32**, install **esp32 by Espressif Systems** (3.0.x).
 4. **Tools > Manage Libraries**: install **RadioLib**, **Adafruit SSD1306** (click **Install all** so Adafruit GFX and BusIO come too).
 5. Open `pump_node.ino`. `pump_logic.h` opens as a second tab; that is correct.
-6. **Tools > Board > esp32 > Heltec WiFi LoRa 32(V3)**, plug the Heltec in by USB-C, and pick its port under **Tools > Port**.
+6. Pick the board under **Tools > Board > esp32**:
+   - **XIAO_ESP32S3** for 2026 kits (Seeed XIAO ESP32S3 + Wio-SX1262 on the standard Radio Board), or
+   - **Heltec WiFi LoRa 32(V3)** for the first kits.
+
+   The program picks the right pins by itself. Plug the board in by USB-C and pick its port under **Tools > Port**.
+   Screw the LoRa antenna on **before** you plug in.
 7. Click **Upload** (the arrow). It's working when the bottom says **Hard resetting via RTS pin** and the screen shows **AgriSense PUMP node / READY**.
+   XIAO only: if the upload cannot find the board, hold the small **B** (BOOT) key on the XIAO, plug the USB in, let go, and upload again.
 
 If the screen says **SENSOR?**, the pressure sensor is not plugged into the 2 mm jacks (5 V, SIG, GND). The pump will not run until it is.
 
