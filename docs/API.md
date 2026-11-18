@@ -18,7 +18,7 @@ A **node or build deck** can post one reading directly, using the same fields wi
 
 The **pump node** (usually relayed by the gateway) posts:
 ```json
-{"event": "no_flow" | "blocked" | "tank_low" | "done", "tank": "OK"}
+{"event": "no_flow" | "blocked" | "pressure_fault" | "tank_low" | "done", "tank": "OK"}
 ```
 
 A **Trainer Board** posts:

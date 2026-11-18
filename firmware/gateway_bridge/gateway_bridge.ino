@@ -6,7 +6,8 @@
   LoRa packets this sketch expects (adapt parseNode() if your node firmware sends another format):
     node -> gateway:  "R,ND-1B33,24.1,19.2,410,6.5,37,12,94,3.31"   (serial, moisture, temp, EC, pH, N, P, K, battery V)
                       "F,ND-1B33"                                    (probe did not answer)
-    pump -> gateway:  "P,DONE" | "P,NO_FLOW" | "P,BLOCKED" | "P,TANK_LOW" | "P,TANK_OK"
+    pump -> gateway:  "P,DONE" | "P,NO_FLOW" | "P,BLOCKED" | "P,PRESSURE_FAULT"  (firmware/pump_node)
+                      "P,TANK_LOW" | "P,TANK_OK"  (only if a pump node has a float switch; the kit's does not)
     gateway -> pump:  the platform command as-is: "RUN,60,B" or "STOP"
   The pump node keeps its own limits (300 s max, one tray at a time, stops on NO FLOW / BLOCKED).
 */

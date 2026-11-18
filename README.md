@@ -57,7 +57,8 @@ agrisense/        app factory, db (SQLite or PostgreSQL), auth, rbac, schema.sql
   services/       feeds, safety, actions, ingest, simulate, live, exports, catalog, audit
   routes/         public, admin, teacher, student, studio, data, staff, api
   templates/      Jinja pages        static/  app.css, app.js (no build step, no libraries)
-firmware/         trainer_studio (Trainer Board ↔ Studio), gateway_bridge (bench gateway ↔ platform)
+firmware/         trainer_studio (Trainer Board ↔ Studio), gateway_bridge (bench gateway ↔ platform),
+                  pump_node (Field add-on pump), build_deck_node (node E), AgriSenseStudent (UNO R4 library)
 docs/             API.md, DEPLOY.md, screenshots/
 tests/            pytest suite        tools/pg_replay.sh
 ```

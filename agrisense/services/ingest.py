@@ -12,6 +12,7 @@ ALERT_TEXT = {
     "no_flow": "Pump stopped: NO FLOW. Check the tank and the intake tube.",
     "blocked": "Pump stopped: BLOCKED. A tube is kinked or an emitter is clogged.",
     "tank_low": "Tank level LOW. Refill the reservoir.",
+    "pressure_fault": "Pump node: the pressure sensor is unplugged or broken, so the pump will not run. Check the 2 mm 5V / SIG / GND jacks.",
     "high_ec": "Tray {t}: EC above 2000 µS/cm (salty).",
 }
 
@@ -99,11 +100,12 @@ def handle(db, dev, body):
         stored += node_reading(db, dev, body)
     elif dev["kind"] == "pump":
         ev = (body.get("event") or "").lower()
-        if ev in ("no_flow", "blocked", "tank_low"):
+        if ev in ("no_flow", "blocked", "tank_low", "pressure_fault"):
             _alert(db, ev, dev)
             db.run("UPDATE pump_requests SET status = 'stopped' WHERE status = 'approved' AND class_id IN "
                    "(SELECT id FROM classes WHERE kit_id = ?)", dev["kit_id"])
         if ev == "done":
+            _resolve(db, "pressure_fault", dev)
             db.run("UPDATE pump_requests SET status = 'done' WHERE status = 'approved' AND class_id IN "
                    "(SELECT id FROM classes WHERE kit_id = ?)", dev["kit_id"])
         if body.get("tank") == "OK":
