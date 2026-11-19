@@ -34,8 +34,9 @@
         {% if advice.rate %}Drying about {{ '%.2f'|format(advice.rate) }} % per hour.{% endif %}
         {% if advice.seconds %}About <b>{{ advice.seconds }} s</b> of pumping brings it back to {{ advice.target }} %
         ({{ 'learned from your last runs' if advice.learned else 'bench estimate: ' ~ advice.per_s ~ ' % per second' }}).{% endif %}</p>
-    </div>{% endif %}
-    <div class="card"><h2>Predict, water, check</h2>
+      <a class="btn primary small" href="#ask-water" style="margin-top:10px">Ask for water ↓</a>
+    </div>{% else %}<a class="btn primary" href="#ask-water">Ask for water ↓</a>{% endif %}
+    <div class="card" id="ask-water"><h2>Ask for water</h2><p class="muted" style="margin:0 0 8px">Predict, ask, water, check.</p>
       <div class="loop"><div class="on"><b>1 Predict</b>what moisture after?</div><div><b>2 Ask</b>teacher approves</div><div><b>3 Water</b>pump runs</div><div><b>4 Check</b>probe reads it</div></div>
       <form method="post" style="margin-top:12px">{{ csrf() }}<input type="hidden" name="do" value="water">
         <div class="fields">
