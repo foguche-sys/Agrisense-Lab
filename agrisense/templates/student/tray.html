@@ -3,7 +3,7 @@
 {% block body %}
 <div class="page-head"><div><div class="eyebrow">{{ team.name }} · {{ cls.name }}</div><h1>Tray {{ tray.letter }} · {{ tray.label }}</h1></div>
   <a class="btn" href="{{ url_for('data.explorer') }}">Download our data</a></div>
-{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Watering here waters the simulated tray.</div>{% endif %}
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Watering here waters the simulated tray.{% if cls.sim_auto_approve %} Your teacher has turned on auto-approve, so it waters straight away.{% endif %}</div>{% endif %}
 <div class="grid side">
   <div class="stack">
     <div class="card"><div class="card-head"><h2>Moisture, last 48 h</h2></div>
@@ -37,14 +37,14 @@
       <a class="btn primary small" href="#ask-water" style="margin-top:10px">Ask for water ↓</a>
     </div>{% else %}<a class="btn primary" href="#ask-water">Ask for water ↓</a>{% endif %}
     <div class="card" id="ask-water"><h2>Ask for water</h2><p class="muted" style="margin:0 0 8px">Predict, ask, water, check.</p>
-      <div class="loop"><div class="on"><b>1 Predict</b>what moisture after?</div><div><b>2 Ask</b>teacher approves</div><div><b>3 Water</b>pump runs</div><div><b>4 Check</b>probe reads it</div></div>
+      <div class="loop"><div class="on"><b>1 Predict</b>what moisture after?</div><div><b>2 Ask</b>{{ 'auto-approved (simulation)' if cls.sim_enabled and cls.sim_auto_approve else 'teacher approves' }}</div><div><b>3 Water</b>pump runs</div><div><b>4 Check</b>probe reads it</div></div>
       <form method="post" style="margin-top:12px">{{ csrf() }}<input type="hidden" name="do" value="water">
         <div class="fields">
           <div><label for="ws">Seconds (1–{{ limit }})</label><input id="ws" type="number" name="seconds" min="1" max="{{ limit }}" value="{{ advice.seconds if advice and advice.seconds else 30 }}" required></div>
           <div><label for="wp">I predict moisture after (%)</label><input id="wp" type="number" step="0.1" min="0" max="60" name="prediction" placeholder="{{ '%.1f'|format(advice.target) if advice else '' }}" required></div>
         </div>
         <div class="field" style="margin-top:12px"><label for="wr">Why? Use your data.</label><input id="wr" name="reason" maxlength="200" placeholder="Moisture is 12 %, below our refill point" required></div>
-        <button class="btn primary" {{ 'disabled' if not cls.pump_requests_allowed }}>Send to teacher</button>
+        <button class="btn primary" {{ 'disabled' if not cls.pump_requests_allowed }}>{{ 'Water now' if cls.sim_enabled and cls.sim_auto_approve else 'Send to teacher' }}</button>
         {% if not cls.pump_requests_allowed %}<p class="hint">Requests are paused by your teacher.</p>{% endif %}</form>
     </div>
     <div class="card"><h2>Decision log</h2>

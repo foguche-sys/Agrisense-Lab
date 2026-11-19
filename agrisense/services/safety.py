@@ -75,6 +75,10 @@ def request_bench(db, user, memberships, cls, tray, seconds, reason, team_id=Non
         raise SafetyError(f"Pick between 1 and {limit} seconds.")
     if team_id and db.one("SELECT id FROM pump_requests WHERE team_id = ? AND status = 'pending'", team_id):
         raise SafetyError("Your team already has a request waiting.")
+    if team_id and auto_approves(cls):
+        last = db.val("SELECT MAX(decided_at) FROM pump_requests WHERE team_id = ? AND simulated = 1 AND status IN ('approved', 'done')", team_id)
+        if last and (parse_ts(now()) - parse_ts(last)).total_seconds() < AUTO_REST_SECONDS:
+            raise SafetyError("Wait for the result of your last watering (about 1 minute) before you water again.")
     try:
         prediction = None if prediction in (None, "") else round(float(prediction), 1)
     except (TypeError, ValueError):
@@ -83,7 +87,20 @@ def request_bench(db, user, memberships, cls, tray, seconds, reason, team_id=Non
     db.insert("pump_requests", id=rid, prediction=prediction, class_id=cls["id"], team_id=team_id, tray_id=tray["id"], requested_by=user["id"],
               seconds=seconds, reason=(reason or "")[:200], moisture_before=moisture, status="pending",
               simulated=1 if cls["sim_enabled"] else 0, created_at=now())
+    if auto_approves(cls):
+        # Simulated class with auto-approve on: no real pump exists, so the request waters the simulated tray at once.
+        # The row keeps the prediction, so the decision log still checks it. Real-bench requests never come here.
+        db.run("UPDATE pump_requests SET status = 'approved', decided_at = ? WHERE id = ?", now(), rid)
+        log(db, "pump.auto_approve", f"{seconds} s tray {tray['id']} (simulated)", school_id=cls["school_id"])
     return rid
+
+
+AUTO_REST_SECONDS = 60      # auto-approved simulated runs: one per team per minute, so each result gets checked
+
+
+def auto_approves(cls):
+    """True only for a simulated class whose teacher chose auto-approve. Live bench always needs the teacher."""
+    return bool(cls.get("sim_enabled")) and bool(cls.get("sim_auto_approve"))
 
 
 def decide(db, user, memberships, req_id, approve):

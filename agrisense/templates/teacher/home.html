@@ -9,7 +9,7 @@
   </div>
 </div>
 {{ teach_tabs(cls, 'home') }}
-{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Readings are made up from each soil's behaviour (×{{ cls.sim_speed }} speed{{ ', ' ~ cls.sim_event.replace('_',' ') if cls.sim_event and cls.sim_event != 'none' }}). Pump approvals water the simulated trays only.</div>{% endif %}
+{% if cls.sim_enabled %}<div class="banner sim"><b>SIMULATED DATA</b> Readings are made up from each soil's behaviour (×{{ cls.sim_speed }} speed{{ ', ' ~ cls.sim_event.replace('_',' ') if cls.sim_event and cls.sim_event != 'none' }}). {{ 'Water requests are auto-approved and' if cls.sim_auto_approve else 'Pump approvals' }} water the simulated trays only.</div>{% endif %}
 {% for a in alerts %}<div class="banner warn"><b>{{ a.kind.replace('_',' ')|upper }}</b> {{ a.message }} <small>{{ a.created_at|ago }}</small>
   <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}" class="inline" style="margin-left:auto">{{ csrf() }}<input type="hidden" name="do" value="resolve_alert"><input type="hidden" name="alert_id" value="{{ a.id }}"><button class="btn small">Dismiss</button></form></div>{% endfor %}
 
@@ -51,7 +51,9 @@
       <form method="post" action="{{ url_for('teacher.class_settings', cid=cls.id) }}">{{ csrf() }}<input type="hidden" name="do" value="sim">
         <div class="fields"><div><label for="so">Data</label><select id="so" name="on"><option value="0" {{ 'selected' if not cls.sim_enabled }}>Live bench</option><option value="1" {{ 'selected' if cls.sim_enabled }}>Simulated</option></select></div>
           <div><label for="se">Event</label><select id="se" name="event">{% for v, l in [('none','Normal'),('dry_spell','Dry spell'),('heat_wave','Heat wave')] %}<option value="{{ v }}" {{ 'selected' if (cls.sim_event or 'none') == v }}>{{ l }}</option>{% endfor %}</select></div>
-          <div><label for="sp">Speed</label><select id="sp" name="speed">{% for v, l in [(1,'Real time'),(60,'1 h per min'),(240,'4 h per min')] %}<option value="{{ v }}" {{ 'selected' if cls.sim_speed == v }}>{{ l }}</option>{% endfor %}</select></div></div>
+          <div><label for="sp">Speed</label><select id="sp" name="speed">{% for v, l in [(1,'Real time'),(60,'1 h per min'),(240,'4 h per min')] %}<option value="{{ v }}" {{ 'selected' if cls.sim_speed == v }}>{{ l }}</option>{% endfor %}</select></div>
+          <div><label for="sa">Water requests (simulation only)</label><select id="sa" name="auto"><option value="0" {{ 'selected' if not cls.sim_auto_approve }}>I approve each one</option><option value="1" {{ 'selected' if cls.sim_auto_approve }}>Auto-approve</option></select></div></div>
+        <p class="hint" style="margin-top:6px">Auto-approve works only while Data is Simulated. On the live bench you always approve every pump run.</p>
         <button class="btn" style="margin-top:10px">Apply</button></form></div>
     {% endif %}
     {% if chart_tray %}{% set adv = readings[chart_tray.id].advice if readings[chart_tray.id] else none %}

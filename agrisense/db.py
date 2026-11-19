@@ -74,6 +74,7 @@ class Database:
         ("lessons", "seq", "INTEGER"),
         ("orgs", "approved", "INTEGER NOT NULL DEFAULT 1"),
         ("orgs", "approved_at", "TEXT"),
+        ("classes", "sim_auto_approve", "INTEGER NOT NULL DEFAULT 0"),
     ]
 
     def init_schema(self):

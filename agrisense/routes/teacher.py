@@ -92,7 +92,7 @@ def class_settings(cid):
         need("sim.control", class_id=cid)
         on = f.get("on") == "1"
         event = f.get("event") if f.get("event") in ("none", "dry_spell", "heat_wave") else "none"
-        cols = {"sim_enabled": 1 if on else 0, "sim_event": event}
+        cols = {"sim_enabled": 1 if on else 0, "sim_event": event, "sim_auto_approve": 1 if f.get("auto") == "1" else 0}
         if on and not cls["sim_enabled"]:
             cols["sim_started_at"] = now()
         if f.get("speed"):

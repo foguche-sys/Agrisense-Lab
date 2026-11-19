@@ -76,6 +76,7 @@ CREATE TABLE IF NOT EXISTS classes (
   kit_id TEXT REFERENCES kits(id),
   sim_enabled INTEGER NOT NULL DEFAULT 0,
   sim_event TEXT,                        -- none | dry_spell | heat_wave
+  sim_auto_approve INTEGER NOT NULL DEFAULT 0, -- 1: water requests in simulation go through without the teacher
   sim_started_at TEXT,                   -- when simulation was switched on
   sim_speed INTEGER NOT NULL DEFAULT 60, -- simulated minutes per real minute
   pump_requests_allowed INTEGER NOT NULL DEFAULT 1,

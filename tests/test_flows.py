@@ -104,6 +104,35 @@ def test_simulated_class_waters_simulation(client, db):
     assert after["simulated"] and a > b
 
 
+
+def test_sim_auto_approve_waters_without_teacher(client, db):
+    i = ids(db)
+    tok = login(client, "teacher")
+    client.post(f"/teach/{i['sim']}/settings", data={"_csrf": tok, "do": "sim", "on": "1", "event": "dry_spell", "speed": "60", "auto": "1"})
+    assert db.val("SELECT sim_auto_approve FROM classes WHERE id = ?", i["sim"]) == 1
+    client.post("/logout", data={"_csrf": tok})
+    tok = login_student(client, db, "Liam T.", code="AGRI05")
+    r = client.post("/me/tray", data={"_csrf": tok, "do": "water", "seconds": "40", "reason": "below refill", "prediction": "26"}, follow_redirects=True)
+    assert b"auto-approved" in r.data
+    row = db.one("SELECT * FROM pump_requests WHERE class_id = ? ORDER BY created_at DESC", i["sim"])
+    assert row["status"] == "approved" and row["prediction"] == 26.0 and row["simulated"] == 1
+    assert db.val("SELECT COUNT(*) AS n FROM commands") == 0          # still no real pump command
+    r = client.post("/me/tray", data={"_csrf": tok, "do": "water", "seconds": "40", "reason": "again", "prediction": "28"}, follow_redirects=True)
+    assert b"Wait for the result" in r.data                            # one auto run per team per minute
+    assert db.val("SELECT COUNT(*) AS n FROM pump_requests WHERE class_id = ?", i["sim"]) == 1
+
+
+def test_auto_approve_never_applies_to_live_bench(client, db):
+    i = ids(db)
+    tok = login(client, "teacher")
+    client.post(f"/teach/{i['cls']}/settings", data={"_csrf": tok, "do": "sim", "on": "0", "event": "none", "speed": "60", "auto": "1"})
+    client.post("/logout", data={"_csrf": tok})
+    tok = login_student(client, db)
+    client.post("/me/tray", data={"_csrf": tok, "do": "water", "seconds": "30", "reason": "dry", "prediction": "25"})
+    row = db.one("SELECT * FROM pump_requests WHERE class_id = ? ORDER BY created_at DESC", i["cls"])
+    assert row["status"] == "pending" and row["simulated"] == 0       # the teacher still approves real pump runs
+    assert db.val("SELECT COUNT(*) AS n FROM commands") == 0
+
 # ---------- IoT Studio: switches, safety, actions, team key ----------
 
 def test_studio_toggle_locked_then_unlocked(client, app, db):

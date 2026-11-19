@@ -45,10 +45,12 @@ def tray():
         if act == "water":
             reading = tray_now(d, cls, tr)
             try:
+                auto = safety.auto_approves(cls)
                 safety.request_bench(d, g.user, g.memberships, cls, tr, request.form.get("seconds"), request.form.get("reason"),
                                      team_id=team["id"], moisture=reading.get("moisture") if reading else None,
                                      prediction=request.form.get("prediction"))
-                ok("Request sent to your teacher.")
+                ok("Watering the simulated tray now (auto-approved). Check your result in the decision log in about 1 minute."
+                   if auto else "Request sent to your teacher.")
             except safety.SafetyError as e:
                 err(str(e))
         elif act == "observe":
