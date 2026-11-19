@@ -28,8 +28,8 @@ TRAINER_COMPONENTS = {
     "knob-2":   ("Knob 2", "sensor", "%", "ADS1115 A1"),
     "motor":    ("Motor (TB6612)", "output", "-100..100", "PCA ch 1 + MCP 14/15 · L3"),
     "growlight": ("Grow light", "output", "%", "PCA9685 ch 2 · MOSFET · load jacks L4"),
-    "post-a1":  ("Coding post A1", "sensor", "V", "GPIO 7 · post 12"),
-    "post-d1":  ("Coding post D1", "sensor", "HIGH/LOW", "GPIO 47 · post 14"),
+    "post-a1":  ("Coding post A1", "sensor", "V", "XIAO D8 (GPIO 7) · post 12"),
+    "post-d1":  ("Coding post D1", "sensor", "HIGH/LOW", "XIAO D9 (GPIO 8) · post 14"),
 }
 DEFAULT_TRAINER = ["pump", "fan", "moisture", "air-temp", "humidity", "light", "pressure", "tank", "vent", "growlight",
                    "ledbar", "buzzer", "knob-1", "knob-2", "motor"]   # everything a Starter kit has (Labs 1 and 3)

@@ -10,6 +10,11 @@
     Module bus (Wire)     SDA / SCL           D4 / D5 (GPIO5 / GPIO6)          GPIO5 / GPIO6
     STUDENT port (Wire1)  SDA / SCL           D0 / D1 (GPIO1 / GPIO2)          GPIO38 / GPIO39
     Screen                0.96" OLED 0x3C on the module bus                    (built-in screen not used)
+    Coding post 12 A1     D8 / GPIO7 (analog in)                           GPIO7
+    Coding post 14 D1     D9 / GPIO8 (digital in, pulled down)             GPIO47
+    Coding post 15 D2     D10 / GPIO9 (free for student code)              GPIO48
+    The Trainer's XIAO runs WITHOUT the Wio-SX1262 radio (unclip it, or buy a plain XIAO ESP32S3): the
+    radio would use D8-D10, which are the coding posts here. The Trainer needs Wi-Fi only.
     4800 baud, address 1, regs 0..6
     Pressure     ADS1115 A2 through 10k/20k divider (0.5-4.5 V sensor, 0-30 psi)
     Tank level   MCP23017 pin 13, INPUT_PULLUP (float closed = OK)
@@ -46,7 +51,7 @@
 #include "secrets.h"
 #include "agrisense_protocol.h"
 
-#define FW_VERSION "trainer-1.4.0"
+#define FW_VERSION "trainer-1.5.0"
 #define PCA_GROW 2
 #define PCA_MOTOR 1
 #define MCP_AIN1 14
@@ -57,7 +62,13 @@
 #define RS485_DE 3
 #define STUDENT_SDA 1
 #define STUDENT_SCL 2
+#define POST_A1 7      // D8, coding post 12
+#define POST_D1 8      // D9, coding post 14
+#define POST_D2 9      // D10, coding post 15 (not driven by this program)
 #else
+#define POST_A1 7
+#define POST_D1 47
+#define POST_D2 48
 #define RS485_RX 40
 #define RS485_DE 41
 #define STUDENT_SDA 38
@@ -301,6 +312,8 @@ void postFeeds() {
   f["motor"] = motorVal;
   f["knob-1"] = round(knob1);
   f["knob-2"] = round(knob2);
+  f["post-a1"] = round(analogReadMilliVolts(POST_A1) / 10.0) / 100.0;     // volts, 0-3.1 V
+  f["post-d1"] = digitalRead(POST_D1) == HIGH ? "HIGH" : "LOW";
   if (pendingEvent.length()) doc["event"] = pendingEvent;
   if (studentEvent.length()) doc["student_event"] = studentEvent;
   String body; serializeJson(doc, body);
@@ -344,6 +357,9 @@ void setup() {
   haveLux = luxBegin();
   haveAht = aht.begin();
   studentBegin();
+  pinMode(POST_A1, INPUT); analogSetPinAttenuation(POST_A1, ADC_11db);   // coding posts: inputs only, never driven
+  pinMode(POST_D1, INPUT_PULLDOWN);                                       // reads LOW until a student wires it to 3V3
+  pinMode(POST_D2, INPUT);
 #if defined(ARDUINO_XIAO_ESP32S3)
   screenOk = screen.begin(SSD1306_SWITCHCAPVCC, 0x3C);
 #endif
