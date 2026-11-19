@@ -5,7 +5,7 @@
 
   Pins (Trainer Board v2, FIELD I/O):         XIAO_ESP32S3 (2026)              Heltec V3 (first kits)
     RS485 probe  MAX3485  TX                  D3 / GPIO4                       GPIO4
-                          RX (1k/2k divider)  D7 / GPIO44                      GPIO40
+                          RX (direct: 3.3 V)  D7 / GPIO44                      GPIO40
                           DE/RE               D2 / GPIO3                       GPIO41
     Module bus (Wire)     SDA / SCL           D4 / D5 (GPIO5 / GPIO6)          GPIO5 / GPIO6
     STUDENT port (Wire1)  SDA / SCL           D0 / D1 (GPIO1 / GPIO2)          GPIO38 / GPIO39

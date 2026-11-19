@@ -12,7 +12,8 @@
   The same sketch runs field nodes A-D (set SEND_MODE to SEND_LORA). It picks the pins for the board you
   choose in Tools > Board:
     "XIAO_ESP32S3" (2026 kits: Seeed XIAO ESP32S3 + Wio-SX1262 on the standard Radio Board)
-       RS485 MAX485  TX D3/GPIO4  RX D7/GPIO44 (through 1k/2k divider)  DE/RE D2/GPIO3   4800 baud, address 1
+       RS485 TX D3/GPIO4  RX D7/GPIO44  DE/RE D2/GPIO3   4800 baud, address 1
+       (deck: 5 V MAX485, RX through the 1k/2k divider; field nodes: 3.3 V MAX3485, RX straight)
        Pod rail + screen  SDA D4/GPIO5  SCL D5/GPIO6 (3.3 V): AIR pod AHT20 0x38, LIGHT pod BH1750 0x23,
                           0.96" OLED 0x3C
        12 V monitor  D0/GPIO1 through 47k/10k divider (optional)  Button D1/GPIO2 to GND (or the XIAO's BOOT key)
